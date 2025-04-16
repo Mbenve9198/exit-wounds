@@ -18,6 +18,7 @@ export default function NewsletterForm() {
   }
 
   const handleSuccess = () => {
+    console.log('Registration successful, setting isSubscribed to true')
     setIsSubscribed(true)
     setShowModal(false)
   }
