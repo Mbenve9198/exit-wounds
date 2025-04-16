@@ -6,7 +6,7 @@ if (!process.env.RESEND_API_KEY) {
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function sendVerificationEmail(email: string) {
+export async function sendVerificationEmail(email: string, nickname: string) {
   try {
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
@@ -14,7 +14,7 @@ export async function sendVerificationEmail(email: string) {
       subject: 'YOUR SUBSCRIPTION IS LIKE A STARTUP: MIGHT DIE WITHOUT VALIDATION',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1>Hey recovering founder,</h1>
+          <h1>Hey ${nickname},</h1>
           
           <p>Thanks for signing up to "Exit Wounds" - the newsletter where a sold-out founder documents his journey talking to imaginary AI bots and getting voluntarily choked to forget his startup trauma.</p>
           

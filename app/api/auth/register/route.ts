@@ -32,13 +32,15 @@ export async function POST(request: Request) {
       email,
       password,
       nickname,
-      isVerified: false
+      isVerified: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
     console.log('User created:', newUser._id);
 
     // Invia email di verifica
     console.log('Sending verification email...');
-    const emailSent = await sendVerificationEmail(email);
+    const emailSent = await sendVerificationEmail(email, nickname);
     if (!emailSent) {
       console.error('Failed to send verification email');
       // Non blocchiamo la registrazione se l'email non viene inviata
