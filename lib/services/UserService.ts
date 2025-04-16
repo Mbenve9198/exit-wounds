@@ -1,64 +1,82 @@
-import { getDatabase } from '../mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import { User } from '../models/User';
+import { getDatabase } from '../mongodb';
 import bcrypt from 'bcryptjs';
-import { ObjectId } from 'mongodb';
 
 export class UserService {
   private static async getCollection() {
-    const db = await getDatabase();
-    return db.collection<User>('users');
+    try {
+      const db = await getDatabase();
+      return db.collection<User>('users');
+    } catch (error) {
+      console.error('Error connecting to database:', error);
+      throw error;
+    }
   }
 
-  static async createUser(userData: Omit<User, '_id' | 'createdAt' | 'updatedAt'>): Promise<User> {
-    const collection = await this.getCollection();
-    
-    // Hash della password
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
-    
-    const newUser: User = {
-      ...userData,
-      password: hashedPassword,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isVerified: false,
-      verificationToken: null,
-      role: 'user'
-    };
-
-    const result = await collection.insertOne(newUser);
-    return { ...newUser, _id: result.insertedId };
+  static async createUser(userData: Omit<User, '_id'>): Promise<User> {
+    try {
+      const collection = await this.getCollection();
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      const user = { ...userData, password: hashedPassword };
+      const result = await collection.insertOne(user as User);
+      console.log('User created successfully:', result.insertedId);
+      return { ...user, _id: result.insertedId };
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
   }
 
   static async findUserByEmail(email: string): Promise<User | null> {
-    const collection = await this.getCollection();
-    return collection.findOne({ email });
+    try {
+      const collection = await this.getCollection();
+      return await collection.findOne({ email });
+    } catch (error) {
+      console.error('Error finding user by email:', error);
+      throw error;
+    }
   }
 
   static async findUserById(id: string): Promise<User | null> {
-    const collection = await this.getCollection();
-    return collection.findOne({ _id: new ObjectId(id) });
+    try {
+      const collection = await this.getCollection();
+      return await collection.findOne({ _id: new ObjectId(id) });
+    } catch (error) {
+      console.error('Error finding user by id:', error);
+      throw error;
+    }
   }
 
-  static async updateUser(id: string, updateData: Partial<User>): Promise<User | null> {
-    const collection = await this.getCollection();
-    
-    // Se viene aggiornata la password, hashala
-    if (updateData.password) {
-      updateData.password = await bcrypt.hash(updateData.password, 10);
+  static async updateUser(id: string, userData: Partial<User>): Promise<User | null> {
+    try {
+      const collection = await this.getCollection();
+      if (userData.password) {
+        userData.password = await bcrypt.hash(userData.password, 10);
+      }
+      const result = await collection.findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        { $set: userData },
+        { returnDocument: 'after' }
+      );
+      console.log('User updated successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
     }
+  }
 
-    const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { 
-        $set: { 
-          ...updateData,
-          updatedAt: new Date()
-        } 
-      },
-      { returnDocument: 'after' }
-    );
-
-    return result;
+  static async deleteUser(id: string): Promise<boolean> {
+    try {
+      const collection = await this.getCollection();
+      const result = await collection.deleteOne({ _id: new ObjectId(id) });
+      console.log('User deleted successfully:', result.deletedCount);
+      return result.deletedCount === 1;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
   }
 
   static async verifyUser(token: string): Promise<User | null> {
