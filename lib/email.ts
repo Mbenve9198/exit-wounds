@@ -78,7 +78,7 @@ async function sendAdminNotificationEmail(userEmail: string, nickname: string) {
           <p>Click the button below to approve this subscriber:</p>
           
           <div style="text-align: center; margin: 20px 0;">
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/auth/approve?email=${encodeURIComponent(userEmail)}" 
+            <a href="https://exit-wounds.com/api/auth/approve?email=${encodeURIComponent(userEmail)}" 
                style="display: inline-block; padding: 12px 24px; background-color: #FFDD33; color: black; text-decoration: none; border: 2px solid black; border-radius: 50px; font-weight: bold;">
               Approve Subscriber
             </a>
