@@ -7,6 +7,8 @@ export interface User {
   nickname: string;
   verificationToken?: string | null;
   isVerified: boolean;
+  isApproved: boolean;
+  approvedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
   role?: 'user' | 'admin';
