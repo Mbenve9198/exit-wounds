@@ -1,6 +1,10 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
-const uri = "mongodb+srv://marco:xlnhOlTFYwhPICkK@exit-wounds.2otjbuu.mongodb.net/?retryWrites=true&w=majority&appName=exit-wounds";
+if (!process.env.MONGODB_URI) {
+  throw new Error('MONGODB_URI environment variable is not defined');
+}
+
+const uri = process.env.MONGODB_URI;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -25,11 +29,11 @@ export async function connectToDatabase() {
     return client;
   } catch (error) {
     console.error("Errore nella connessione a MongoDB:", error);
-    throw error;
+    throw new Error(`Errore nella connessione al database: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
   }
 }
 
 export async function getDatabase() {
   const client = await connectToDatabase();
-  return client.db("exit-wounds");
+  return client.db(process.env.MONGODB_DB || 'exit-wounds');
 } 

@@ -1,11 +1,15 @@
 import { Resend } from 'resend';
 
-const resend = new Resend('re_L8nxLPsh_AFgnAHfpPmnq1mwezan3Dws4');
+if (!process.env.RESEND_API_KEY) {
+  throw new Error('RESEND_API_KEY environment variable is not defined');
+}
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendVerificationEmail(email: string) {
   try {
     await resend.emails.send({
-      from: 'marco@exit-wounds.com',
+      from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
       to: email,
       subject: 'YOUR SUBSCRIPTION IS LIKE A STARTUP: MIGHT DIE WITHOUT VALIDATION',
       html: `
@@ -54,6 +58,6 @@ export async function sendVerificationEmail(email: string) {
     return true;
   } catch (error) {
     console.error('Errore nell\'invio dell\'email:', error);
-    return false;
+    throw new Error(`Errore nell'invio dell'email di verifica: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
   }
 } 

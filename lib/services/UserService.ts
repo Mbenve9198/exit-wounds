@@ -10,21 +10,35 @@ export class UserService {
       return db.collection<User>('users');
     } catch (error) {
       console.error('Error connecting to database:', error);
-      throw error;
+      throw new Error(`Errore nella connessione al database: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
     }
   }
 
   static async createUser(userData: Omit<User, '_id'>): Promise<User> {
     try {
       const collection = await this.getCollection();
+      
+      // Verifica se l'utente esiste già
+      const existingUser = await this.findUserByEmail(userData.email);
+      if (existingUser) {
+        throw new Error('Email già registrata');
+      }
+
       const hashedPassword = await bcrypt.hash(userData.password, 10);
-      const user = { ...userData, password: hashedPassword };
+      const user = { 
+        ...userData, 
+        password: hashedPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isVerified: false
+      };
+      
       const result = await collection.insertOne(user as User);
       console.log('User created successfully:', result.insertedId);
       return { ...user, _id: result.insertedId };
     } catch (error) {
       console.error('Error creating user:', error);
-      throw error;
+      throw new Error(`Errore nella creazione dell'utente: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
     }
   }
 
