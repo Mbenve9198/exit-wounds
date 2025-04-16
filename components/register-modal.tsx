@@ -8,9 +8,10 @@ import { useToast } from "@/hooks/use-toast"
 interface RegisterModalProps {
   email: string
   onClose: () => void
+  onSuccess: () => void
 }
 
-export default function RegisterModal({ email, onClose }: RegisterModalProps) {
+export default function RegisterModal({ email, onClose, onSuccess }: RegisterModalProps) {
   const [nickname, setNickname] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -44,12 +45,18 @@ export default function RegisterModal({ email, onClose }: RegisterModalProps) {
         throw new Error(data.error || 'Something went wrong... like your startup probably')
       }
 
+      const data = await response.json()
+      console.log('Registration response:', data)
+
       toast({
         title: "Welcome to the club!",
         description: "Check your email to confirm your subscription. Don't worry, we won't sell your data... much",
       })
 
-      onClose()
+      setTimeout(() => {
+        onSuccess()
+      }, 1000)
+
     } catch (error) {
       toast({
         title: "Error",
