@@ -11,6 +11,7 @@ export async function sendVerificationEmail(email: string, nickname: string) {
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
       to: email,
+      replyTo: 'marco.benvenuti@isendu.com',
       subject: 'YOUR SUBSCRIPTION IS LIKE A STARTUP: MIGHT DIE WITHOUT VALIDATION',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
