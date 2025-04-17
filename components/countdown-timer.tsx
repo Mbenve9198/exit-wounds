@@ -81,7 +81,7 @@ export default function CountdownTimer() {
 
   return (
     <div className="w-full bg-black text-white rounded-lg p-6 mb-6">
-      <h2 className="text-center text-xl mb-4 font-bold">The first comic will be available on:</h2>
+      <h2 className="text-center text-xl mb-4 font-bold">First comic drops in:</h2>
       
       <motion.div 
         className="flex justify-center items-center space-x-4"
