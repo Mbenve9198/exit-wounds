@@ -92,6 +92,7 @@ export default function AdminPage() {
     
     try {
       setLoading(true);
+      setFormError(`Caricamento in corso... Attendere prego. Il file è grande (${(file.size / (1024 * 1024)).toFixed(2)} MB) e potrebbe richiedere tempo.`);
       
       const formData = new FormData();
       formData.append('title', title);
@@ -99,16 +100,24 @@ export default function AdminPage() {
       formData.append('description', description);
       formData.append('file', file);
       
+      // Ottimizziamo la richiesta per gestire file di grandi dimensioni
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5 minuti di timeout
+      
       const response = await fetch('/api/admin/comics', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`
         },
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        throw new Error('Errore nel caricamento del fumetto');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore nel caricamento del fumetto');
       }
       
       const result = await response.json();
@@ -119,11 +128,13 @@ export default function AdminPage() {
       setChapter('');
       setDescription('');
       setFile(null);
+      setFormError('');
       
       // Refresh comics list
       fetchComics();
-    } catch (err) {
-      setFormError('Errore durante il caricamento del fumetto.');
+    } catch (err: any) {
+      console.error('Errore durante il caricamento:', err);
+      setFormError(`Errore durante il caricamento del fumetto: ${err.message || 'Si è verificato un errore'}`);
     } finally {
       setLoading(false);
     }

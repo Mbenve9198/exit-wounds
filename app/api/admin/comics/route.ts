@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { writeFile, mkdir } from 'fs/promises';
+import { join, dirname } from 'path';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { Comic } from '@/lib/models/Comic';
+
+// Configurazione per permettere file di grandi dimensioni
+export const config = {
+  api: {
+    bodyParser: false,
+    responseLimit: '50mb',
+  },
+};
 
 // Funzione di autorizzazione admin
 async function isAdmin(request: NextRequest) {
@@ -51,11 +59,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('Elaborazione richiesta di caricamento fumetto...');
+    
+    // Leggiamo il FormData, gestendo file di grandi dimensioni
     const data = await request.formData();
     const file: File | null = data.get('file') as unknown as File;
     const title = data.get('title') as string;
     const chapter = parseInt(data.get('chapter') as string);
     const description = data.get('description') as string;
+    
+    console.log(`File ricevuto: ${file?.name}, dimensione: ${file?.size} bytes`);
     
     if (!file || !title || isNaN(chapter)) {
       return NextResponse.json({ error: 'File, titolo e capitolo sono richiesti' }, { status: 400 });
@@ -69,9 +82,22 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    console.log(`Buffer creato, dimensione: ${buffer.length} bytes`);
+
+    // Assicuriamoci che la directory esista
+    const comicsDir = join(process.cwd(), 'public', 'comics');
+    try {
+      await mkdir(comicsDir, { recursive: true });
+      console.log(`Directory ${comicsDir} creata o già esistente`);
+    } catch (err) {
+      console.error(`Errore nella creazione della directory: ${err}`);
+    }
+
     // Creo un nome file unico basato sul capitolo e sul timestamp
     const fileName = `chapter_${chapter}_${Date.now()}.pdf`;
-    const path = join(process.cwd(), 'public', 'comics', fileName);
+    const filePath = join(comicsDir, fileName);
+    
+    console.log(`Salvataggio file in: ${filePath}`);
     
     // Creo la struttura del fumetto
     const comic: Omit<Comic, '_id'> = {
@@ -87,22 +113,32 @@ export async function POST(request: NextRequest) {
       recipients: 0
     };
 
-    // Salvo il file sul server
-    await writeFile(path, buffer);
-    
-    // Salvo i metadati nel database
-    const db = await getDatabase();
-    const result = await db.collection('comics').insertOne(comic);
-    
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Fumetto caricato con successo',
-      comicId: result.insertedId,
-      comic: { ...comic, _id: result.insertedId }
-    });
+    try {
+      // Salvo il file sul server
+      await writeFile(filePath, buffer);
+      console.log('File salvato con successo');
+      
+      // Salvo i metadati nel database
+      const db = await getDatabase();
+      const result = await db.collection('comics').insertOne(comic);
+      console.log(`Documento creato in MongoDB con ID: ${result.insertedId}`);
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Fumetto caricato con successo',
+        comicId: result.insertedId,
+        comic: { ...comic, _id: result.insertedId }
+      });
+    } catch (err) {
+      console.error(`Errore nel salvataggio: ${err}`);
+      return NextResponse.json({ error: `Errore nel salvataggio: ${err}` }, { status: 500 });
+    }
   } catch (error) {
     console.error('Errore nel caricamento del fumetto:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal Server Error', 
+      details: error instanceof Error ? error.message : 'Errore sconosciuto'
+    }, { status: 500 });
   }
 }
 
