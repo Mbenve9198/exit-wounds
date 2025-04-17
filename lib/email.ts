@@ -504,36 +504,6 @@ export async function sendApprovalEmail(email: string, nickname: string) {
               border-radius: 15px;
             }
             
-            /* Bottone - stile 3D */
-            .cta-button {
-              display: block;
-              width: 80%;
-              margin: 30px auto;
-              padding: 15px 25px;
-              background-color: #FFDD33;
-              color: #000;
-              text-decoration: none;
-              text-align: center;
-              font-weight: bold;
-              font-size: 18px;
-              border: 3px solid #000;
-              border-radius: 40px;
-              transition: all 0.2s ease;
-              box-shadow: 0 6px 0 #000;
-              position: relative;
-              top: 0;
-            }
-            
-            .cta-button:hover {
-              top: -3px;
-              box-shadow: 0 9px 0 #000;
-            }
-            
-            .cta-button:active {
-              top: 3px;
-              box-shadow: 0 2px 0 #000;
-            }
-            
             /* Footer */
             .footer {
               margin-top: 30px;
@@ -558,10 +528,6 @@ export async function sendApprovalEmail(email: string, nickname: string) {
               h1 {
                 font-size: 22px;
               }
-              
-              .cta-button {
-                width: 100%;
-              }
             }
           </style>
         </head>
@@ -582,7 +548,7 @@ export async function sendApprovalEmail(email: string, nickname: string) {
               
               <ul>
                 <li>Post-founder PTSD</li>
-                <li>The awkward transition from "visionary leader" to "corporate slave"</li>
+                <li>The awkward transition from "visionary startupper" to "corporate manager"</li>
                 <li>My attempts to bootstrap microsaas projects using AI I don't fully understand</li>
                 <li>Getting repeatedly destroyed on BJJ mats by people half my age</li>
                 <li>Applying bizarre Taleb concepts to everyday failures</li>
@@ -616,11 +582,11 @@ export async function sendApprovalEmail(email: string, nickname: string) {
               </ul>
             </div>
             
-            <a href="#" class="cta-button">GET READY FOR MONDAY'S FIRST ISSUE</a>
-            
-            <p>Your first proper newsletter will be launched on Monday, April 28th.</p>
-            
-            <p>Remember the BJJ wisdom: Everyone taps eventually. The trick is getting back up.</p>
+            <div style="text-align: center; margin: 25px 0;">
+              <p>Your first proper newsletter will be launched on Monday, April 28th.</p>
+              
+              <p>Remember the BJJ wisdom: Everyone taps eventually. The trick is getting back up.</p>
+            </div>
             
             <div class="footer">
               <div class="signature">
