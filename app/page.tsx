@@ -4,6 +4,7 @@ import FaqAccordion from "@/components/faq-accordion"
 import WhatIGetAccordion from "@/components/what-i-get-accordion"
 import WarningAccordion from "@/components/warning-accordion"
 import WhoAmIAccordion from "@/components/who-am-i-accordion"
+import CountdownTimer from "@/components/countdown-timer"
 
 export default function Home() {
   return (
@@ -21,6 +22,9 @@ export default function Home() {
 
       {/* Content Container - Consistent width and padding */}
       <div className="w-full max-w-md mx-auto px-4 py-8 flex flex-col gap-8">
+        {/* Countdown Timer */}
+        <CountdownTimer />
+        
         {/* Newsletter Signup */}
         <div className="w-full">
           <NewsletterForm />
