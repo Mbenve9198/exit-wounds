@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { UserService } from '@/lib/services/UserService';
-import { sendApprovalEmail } from '@/lib/email';
+import { sendApprovalEmail, addContactToAudience } from '@/lib/email';
 
 export async function GET(request: Request) {
   try {
@@ -35,6 +35,15 @@ export async function GET(request: Request) {
         { error: 'Errore nell\'approvazione dell\'utente' },
         { status: 500 }
       );
+    }
+
+    // Aggiungi l'utente all'audience di Resend
+    try {
+      await addContactToAudience(email, user.nickname);
+      console.log(`Utente ${email} aggiunto all'audience di Resend con successo!`);
+    } catch (resendError) {
+      console.error('Errore nell\'aggiunta dell\'utente all\'audience di Resend:', resendError);
+      // Continuiamo con il processo anche se c'è un errore con Resend
     }
 
     // Invia email di conferma all'utente

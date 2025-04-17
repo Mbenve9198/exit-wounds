@@ -5,6 +5,24 @@ if (!process.env.RESEND_API_KEY) {
 }
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const AUDIENCE_ID = '2ae0ef0c-c5d8-45db-a3cb-6f4032647ec9';
+
+// Helper per aggiungere contatti all'audience
+export async function addContactToAudience(email: string, firstName: string) {
+  try {
+    const result = await resend.contacts.create({
+      email,
+      firstName,
+      audienceId: AUDIENCE_ID,
+      unsubscribed: false
+    });
+    console.log(`Contatto ${email} aggiunto all'audience con successo!`, result);
+    return result;
+  } catch (error) {
+    console.error(`Errore nell'aggiungere ${email} all'audience:`, error);
+    throw error;
+  }
+}
 
 export async function sendVerificationEmail(email: string, nickname: string) {
   try {
