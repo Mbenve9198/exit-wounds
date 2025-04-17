@@ -11,8 +11,8 @@ interface TimeLeft {
 }
 
 export default function CountdownTimer() {
-  // Data di lancio: 28 aprile 2024
-  const launchDate = new Date("2024-04-28T00:00:00");
+  // Launch date: April 28, 2025 at 7:30 AM Rome time (CEST/UTC+2)
+  const launchDate = new Date("2025-04-28T07:30:00+02:00");
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
@@ -42,16 +42,16 @@ export default function CountdownTimer() {
       setTimeLeft(newTimeLeft);
     };
 
-    // Calcola inizialmente
+    // Calculate initially
     calculateTimeLeft();
     
-    // Aggiorna ogni secondo
+    // Update every second
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
   }, []);
 
-  // Varianti per l'animazione
+  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -81,7 +81,7 @@ export default function CountdownTimer() {
 
   return (
     <div className="w-full bg-black text-white rounded-lg p-6 mb-6">
-      <h2 className="text-center text-xl mb-4 font-bold">Il primo fumetto sarà disponibile il:</h2>
+      <h2 className="text-center text-xl mb-4 font-bold">The first comic will be available on:</h2>
       
       <motion.div 
         className="flex justify-center items-center space-x-4"
@@ -89,7 +89,7 @@ export default function CountdownTimer() {
         initial="hidden"
         animate="visible"
       >
-        {/* Giorni */}
+        {/* Days */}
         <motion.div className="flex flex-col items-center" variants={itemVariants}>
           <motion.div 
             className="text-3xl font-bold"
@@ -100,12 +100,12 @@ export default function CountdownTimer() {
           >
             {timeLeft.days}
           </motion.div>
-          <div className="text-sm uppercase">Giorni</div>
+          <div className="text-sm uppercase">Days</div>
         </motion.div>
 
         <motion.div className="text-3xl font-bold">:</motion.div>
 
-        {/* Ore */}
+        {/* Hours */}
         <motion.div className="flex flex-col items-center" variants={itemVariants}>
           <motion.div 
             className="text-3xl font-bold"
@@ -116,12 +116,12 @@ export default function CountdownTimer() {
           >
             {timeLeft.hours.toString().padStart(2, '0')}
           </motion.div>
-          <div className="text-sm uppercase">Ore</div>
+          <div className="text-sm uppercase">Hours</div>
         </motion.div>
 
         <motion.div className="text-3xl font-bold">:</motion.div>
 
-        {/* Minuti */}
+        {/* Minutes */}
         <motion.div className="flex flex-col items-center" variants={itemVariants}>
           <motion.div 
             className="text-3xl font-bold"
@@ -132,12 +132,12 @@ export default function CountdownTimer() {
           >
             {timeLeft.minutes.toString().padStart(2, '0')}
           </motion.div>
-          <div className="text-sm uppercase">Minuti</div>
+          <div className="text-sm uppercase">Minutes</div>
         </motion.div>
 
         <motion.div className="text-3xl font-bold">:</motion.div>
 
-        {/* Secondi */}
+        {/* Seconds */}
         <motion.div className="flex flex-col items-center" variants={itemVariants}>
           <motion.div 
             className="text-3xl font-bold"
@@ -148,7 +148,7 @@ export default function CountdownTimer() {
           >
             {timeLeft.seconds.toString().padStart(2, '0')}
           </motion.div>
-          <div className="text-sm uppercase">Secondi</div>
+          <div className="text-sm uppercase">Seconds</div>
         </motion.div>
       </motion.div>
     </div>
