@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join, dirname } from 'path';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
-import { Comic } from '@/lib/models/Comic';
+import { Comic, ImageInfo } from '@/lib/models/Comic';
+import { uploadImageToCloudinary, deleteFromCloudinary } from '@/lib/cloudinary';
 
 // Configurazione per permettere file di grandi dimensioni
 export const config = {
@@ -43,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     const db = await getDatabase();
-    const comics = await db.collection('comics').find({}).sort({ chapter: 1 }).toArray();
+    const comics = await db.collection('comics').find({}).sort({ title: 1 }).toArray();
     
     return NextResponse.json({ comics });
   } catch (error) {
@@ -63,61 +62,73 @@ export async function POST(request: NextRequest) {
     
     // Leggiamo il FormData, gestendo file di grandi dimensioni
     const data = await request.formData();
-    const file: File | null = data.get('file') as unknown as File;
     const title = data.get('title') as string;
-    const chapter = parseInt(data.get('chapter') as string);
     const description = data.get('description') as string;
     
-    console.log(`File ricevuto: ${file?.name}, dimensione: ${file?.size} bytes`);
+    // Verifichiamo che titolo sia presente
+    if (!title) {
+      return NextResponse.json({ error: 'Il titolo è richiesto' }, { status: 400 });
+    }
     
-    if (!file || !title || isNaN(chapter)) {
-      return NextResponse.json({ error: 'File, titolo e capitolo sono richiesti' }, { status: 400 });
+    // Prendiamo tutti i file dalla richiesta
+    const images: File[] = [];
+    for (const [key, value] of data.entries()) {
+      if (key.startsWith('image') && value instanceof File) {
+        images.push(value);
+      }
     }
-
-    // Verifico che sia un PDF
-    if (!file.type.includes('pdf')) {
-      return NextResponse.json({ error: 'Il file deve essere in formato PDF' }, { status: 400 });
+    
+    if (images.length === 0) {
+      return NextResponse.json({ error: 'Almeno un\'immagine è richiesta' }, { status: 400 });
     }
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    console.log(`Buffer creato, dimensione: ${buffer.length} bytes`);
-
-    // Assicuriamoci che la directory esista
-    const comicsDir = join(process.cwd(), 'public', 'comics');
+    
+    console.log(`Ricevute ${images.length} immagini da caricare`);
+    
     try {
-      await mkdir(comicsDir, { recursive: true });
-      console.log(`Directory ${comicsDir} creata o già esistente`);
-    } catch (err) {
-      console.error(`Errore nella creazione della directory: ${err}`);
-    }
-
-    // Creo un nome file unico basato sul capitolo e sul timestamp
-    const fileName = `chapter_${chapter}_${Date.now()}.pdf`;
-    const filePath = join(comicsDir, fileName);
-    
-    console.log(`Salvataggio file in: ${filePath}`);
-    
-    // Creo la struttura del fumetto
-    const comic: Omit<Comic, '_id'> = {
-      title,
-      chapter,
-      description,
-      pdfUrl: `/comics/${fileName}`,
-      fileId: fileName,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      published: false,
-      sentAt: null,
-      recipients: 0
-    };
-
-    try {
-      // Salvo il file sul server
-      await writeFile(filePath, buffer);
-      console.log('File salvato con successo');
+      // Array per memorizzare i dettagli delle immagini caricate
+      const uploadedImages: ImageInfo[] = [];
       
+      // Carichiamo ogni immagine su Cloudinary
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        
+        // Verifichiamo che sia un'immagine
+        if (!image.type.startsWith('image/')) {
+          return NextResponse.json({ 
+            error: `Il file ${image.name} non è un'immagine valida` 
+          }, { status: 400 });
+        }
+        
+        console.log(`Elaborazione immagine ${i + 1}/${images.length}: ${image.name} (${image.size} bytes)`);
+        
+        // Convertiamo l'immagine in buffer
+        const bytes = await image.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        
+        // Carichiamo su Cloudinary
+        const cloudinaryResult = await uploadImageToCloudinary(buffer, image.name);
+        console.log(`Immagine ${i + 1} caricata su Cloudinary:`, cloudinaryResult.url);
+        
+        // Aggiungiamo alla lista delle immagini caricate
+        uploadedImages.push({
+          url: cloudinaryResult.url,
+          cloudinaryId: cloudinaryResult.publicId,
+          order: i // Manteniamo l'ordine originale
+        });
+      }
+      
+      // Creo la struttura del fumetto con le immagini
+      const comic: Omit<Comic, '_id'> = {
+        title,
+        description,
+        images: uploadedImages,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        published: false,
+        sentAt: null,
+        recipients: 0
+      };
+
       // Salvo i metadati nel database
       const db = await getDatabase();
       const result = await db.collection('comics').insertOne(comic);
@@ -202,7 +213,7 @@ export async function DELETE(request: NextRequest) {
     
     const db = await getDatabase();
     
-    // Prima recupero il fumetto per ottenere il fileId
+    // Prima recupero il fumetto per ottenere gli ID Cloudinary
     const comic = await db.collection('comics').findOne({ _id: new ObjectId(id) });
     
     if (!comic) {
@@ -216,8 +227,18 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Fumetto non trovato' }, { status: 404 });
     }
     
-    // Nota: se necessario, qui potremmo anche eliminare il file fisico
-    // ma per ora lo manteniamo per sicurezza
+    // Elimino tutte le immagini da Cloudinary
+    if (comic.images && comic.images.length > 0) {
+      for (const image of comic.images) {
+        try {
+          await deleteFromCloudinary(image.cloudinaryId);
+          console.log(`Immagine eliminata da Cloudinary: ${image.cloudinaryId}`);
+        } catch (error) {
+          console.error(`Errore nell'eliminazione dell'immagine da Cloudinary: ${error}`);
+          // Continuiamo l'esecuzione anche se c'è un errore con Cloudinary
+        }
+      }
+    }
     
     return NextResponse.json({ 
       success: true, 

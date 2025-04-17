@@ -13,14 +13,15 @@ export default function AdminPage() {
   
   // Form state
   const [title, setTitle] = useState('');
-  const [chapter, setChapter] = useState('');
   const [description, setDescription] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [images, setImages] = useState<File[]>([]);
   const [successMessage, setSuccessMessage] = useState('');
   const [formError, setFormError] = useState('');
   const [selectedComicId, setSelectedComicId] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [sendingResult, setSendingResult] = useState<{success?: number, error?: number} | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   const router = useRouter();
 
@@ -77,6 +78,24 @@ export default function AdminPage() {
     }
   }, []);
 
+  const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      // Converti FileList in array
+      const fileArray = Array.from(e.target.files);
+      
+      // Verifica che tutti i file siano immagini
+      const allImages = fileArray.every(file => file.type.startsWith('image/'));
+      
+      if (!allImages) {
+        setFormError('Tutti i file devono essere immagini (JPEG, PNG, etc.)');
+        return;
+      }
+      
+      setImages(fileArray);
+      setFormError('');
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
@@ -85,20 +104,24 @@ export default function AdminPage() {
     setFormError('');
     
     // Validate form
-    if (!title.trim() || !chapter.trim() || !description.trim() || !file) {
-      setFormError('Tutti i campi sono obbligatori');
+    if (!title.trim() || !description.trim() || images.length === 0) {
+      setFormError('Titolo, descrizione e almeno un\'immagine sono obbligatori');
       return;
     }
     
     try {
-      setLoading(true);
-      setFormError(`Caricamento in corso... Attendere prego. Il file è grande (${(file.size / (1024 * 1024)).toFixed(2)} MB) e potrebbe richiedere tempo.`);
+      setUploading(true);
+      setUploadProgress(0);
+      setFormError(`Caricamento in corso... Attendere prego. ${images.length} immagini da caricare.`);
       
       const formData = new FormData();
       formData.append('title', title);
-      formData.append('chapter', chapter);
       formData.append('description', description);
-      formData.append('file', file);
+      
+      // Aggiungiamo tutte le immagini con chiavi distinte
+      images.forEach((image, index) => {
+        formData.append(`image${index}`, image);
+      });
       
       // Ottimizziamo la richiesta per gestire file di grandi dimensioni
       const controller = new AbortController();
@@ -125,9 +148,8 @@ export default function AdminPage() {
       
       // Reset form
       setTitle('');
-      setChapter('');
       setDescription('');
-      setFile(null);
+      setImages([]);
       setFormError('');
       
       // Refresh comics list
@@ -136,13 +158,8 @@ export default function AdminPage() {
       console.error('Errore durante il caricamento:', err);
       setFormError(`Errore durante il caricamento del fumetto: ${err.message || 'Si è verificato un errore'}`);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+      setUploading(false);
+      setUploadProgress(100);
     }
   };
 
@@ -319,32 +336,17 @@ export default function AdminPage() {
           )}
           
           <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 mb-2" htmlFor="title">
-                  Titolo
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-gray-700 mb-2" htmlFor="chapter">
-                  Numero Capitolo
-                </label>
-                <input
-                  type="number"
-                  id="chapter"
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  value={chapter}
-                  onChange={(e) => setChapter(e.target.value)}
-                />
-              </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 mb-2" htmlFor="title">
+                Titolo
+              </label>
+              <input
+                type="text"
+                id="title"
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
             </div>
             
             <div className="mb-4">
@@ -361,31 +363,50 @@ export default function AdminPage() {
             </div>
             
             <div className="mb-6">
-              <label className="block text-gray-700 mb-2" htmlFor="file">
-                File PDF
+              <label className="block text-gray-700 mb-2" htmlFor="images">
+                Immagini (seleziona nell'ordine corretto)
               </label>
               <input
                 type="file"
-                id="file"
-                accept=".pdf"
+                id="images"
+                accept="image/*"
+                multiple
                 className="w-full border border-gray-300 rounded px-3 py-2"
-                onChange={handleFileChange}
+                onChange={handleImagesChange}
               />
-              {file && (
-                <p className="mt-2 text-sm text-gray-500">
-                  File selezionato: {file.name}
-                </p>
+              {images.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">
+                    {images.length} immagini selezionate
+                  </p>
+                  <ul className="text-xs text-gray-500 mt-1 ml-4 list-disc">
+                    {images.map((file, index) => (
+                      <li key={index}>{file.name}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
             
             <button
               type="submit"
               className="bg-black text-white py-2 px-6 rounded hover:bg-opacity-80 transition-all"
-              disabled={loading}
+              disabled={uploading}
             >
-              {loading ? 'Caricamento...' : 'Carica Fumetto'}
+              {uploading ? 'Caricamento in corso...' : 'Carica Fumetto'}
             </button>
           </form>
+          
+          {uploading && (
+            <div className="mt-4">
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-black h-2.5 rounded-full" 
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Lista dei fumetti */}
@@ -401,9 +422,9 @@ export default function AdminPage() {
               <table className="min-w-full bg-white">
                 <thead>
                   <tr>
-                    <th className="py-3 px-4 border-b text-left">Capitolo</th>
                     <th className="py-3 px-4 border-b text-left">Titolo</th>
                     <th className="py-3 px-4 border-b text-left">Descrizione</th>
+                    <th className="py-3 px-4 border-b text-left">Immagini</th>
                     <th className="py-3 px-4 border-b text-left">Stato</th>
                     <th className="py-3 px-4 border-b text-left">Inviato</th>
                     <th className="py-3 px-4 border-b text-left">Azioni</th>
@@ -412,12 +433,14 @@ export default function AdminPage() {
                 <tbody>
                   {comics.map((comic) => (
                     <tr key={comic._id?.toString()} className="hover:bg-gray-50">
-                      <td className="py-4 px-4 border-b">{comic.chapter}</td>
                       <td className="py-4 px-4 border-b">{comic.title}</td>
                       <td className="py-4 px-4 border-b">
                         {comic.description.length > 50
                           ? `${comic.description.substring(0, 50)}...`
                           : comic.description}
+                      </td>
+                      <td className="py-4 px-4 border-b">
+                        {comic.images?.length || 0} immagini
                       </td>
                       <td className="py-4 px-4 border-b">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -434,10 +457,10 @@ export default function AdminPage() {
                       <td className="py-4 px-4 border-b">
                         <div className="flex space-x-2">
                           <button
-                            onClick={() => window.open(comic.pdfUrl, '_blank')}
+                            onClick={() => comic.images && comic.images.length > 0 && window.open(comic.images[0].url, '_blank')}
                             className="text-blue-600 hover:text-blue-800"
                           >
-                            Visualizza
+                            Anteprima
                           </button>
                           
                           <button

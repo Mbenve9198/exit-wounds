@@ -30,98 +30,24 @@ async function isAdmin(request: NextRequest) {
   }
 }
 
-// POST /api/send-comic - Invia un fumetto via email
-export async function POST(request: NextRequest) {
-  try {
-    if (!(await isAdmin(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { comicId } = await request.json();
-    
-    if (!comicId) {
-      return NextResponse.json({ error: 'ID fumetto richiesto' }, { status: 400 });
-    }
-
-    const db = await getDatabase();
-    
-    // Recupero il fumetto
-    const comic = await db.collection('comics').findOne({ _id: new ObjectId(comicId) }) as Comic;
-    
-    if (!comic) {
-      return NextResponse.json({ error: 'Fumetto non trovato' }, { status: 404 });
-    }
-
-    // Recupero tutti gli utenti approvati
-    const users = await db.collection('users').find({ 
-      isApproved: true, 
-      isVerified: true 
-    }).toArray();
-    
-    if (users.length === 0) {
-      return NextResponse.json({ error: 'Nessun utente trovato per l\'invio' }, { status: 404 });
-    }
-
-    // Preparo l'HTML dell'email
-    const emailHTML = generateComicEmail(comic, users[0]);
-    
-    // Per ogni utente, invia l'email
-    let successCount = 0;
-    let errorCount = 0;
-    
-    for (const user of users) {
-      try {
-        await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
-          to: user.email,
-          subject: `Exit Wounds - Chapter ${comic.chapter}: ${comic.title}`,
-          html: emailHTML,
-          attachments: [
-            {
-              filename: `exit-wounds-chapter-${comic.chapter}.pdf`,
-              path: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}${comic.pdfUrl}`
-            }
-          ]
-        });
-        successCount++;
-      } catch (error) {
-        console.error(`Errore nell'invio dell'email a ${user.email}:`, error);
-        errorCount++;
-      }
-    }
-    
-    // Aggiorno il record del fumetto con le informazioni di invio
-    await db.collection('comics').updateOne(
-      { _id: new ObjectId(comicId) },
-      { 
-        $set: { 
-          sentAt: new Date(),
-          recipients: successCount
-        } 
-      }
-    );
-    
-    return NextResponse.json({ 
-      success: true, 
-      message: `Fumetto inviato con successo a ${successCount} utenti. ${errorCount} errori.`,
-      successCount,
-      errorCount
-    });
-  } catch (error) {
-    console.error('Errore nell\'invio del fumetto:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-}
-
 // Funzione per generare l'HTML dell'email
 function generateComicEmail(comic: Comic, user: any) {
+  // Generiamo l'HTML per tutte le immagini in ordine
+  const imagesHTML = comic.images
+    .sort((a, b) => a.order - b.order) // Ordiniamo per il campo order
+    .map(image => `
+      <div class="comic-image">
+        <img src="${image.url}" alt="Immagine di ${comic.title}" style="max-width: 100%; height: auto; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px;">
+      </div>
+    `).join('');
+
   return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Exit Wounds - Chapter ${comic.chapter}</title>
+      <title>Exit Wounds - ${comic.title}</title>
       <style>
         /* Stili globali */
         body, html {
@@ -135,7 +61,7 @@ function generateComicEmail(comic: Comic, user: any) {
         
         /* Container principale */
         .container {
-          max-width: 600px;
+          max-width: 650px;
           margin: 0 auto;
           padding: 30px 20px;
           background-color: #ffffff;
@@ -190,6 +116,17 @@ function generateComicEmail(comic: Comic, user: any) {
           font-size: 16px;
         }
         
+        /* Fumetto contenitore */
+        .comic-container {
+          margin: 30px 0;
+          text-align: center;
+        }
+        
+        /* Immagini fumetto */
+        .comic-image {
+          margin-bottom: 20px;
+        }
+        
         /* Footer */
         .footer {
           margin-top: 30px;
@@ -209,19 +146,23 @@ function generateComicEmail(comic: Comic, user: any) {
     <body>
       <div class="container">
         <div class="header">
-          <h1>EXIT WOUNDS - CHAPTER ${comic.chapter}</h1>
+          <h1>EXIT WOUNDS</h1>
           <h2>${comic.title}</h2>
         </div>
         
         <p>Ciao ${user.nickname || 'lettore'},</p>
         
-        <p>Ecco il nuovo capitolo della tua serie preferita di fallimenti imprenditoriali e traumi da startup!</p>
+        <p>Ecco il nuovo fumetto della tua serie preferita di fallimenti imprenditoriali e traumi da startup!</p>
         
-        <div class="title-marker">ABOUT THIS CHAPTER</div>
+        <div class="title-marker">ABOUT THIS COMIC</div>
         
         <p>${comic.description}</p>
         
-        <p>Il PDF è allegato a questa email. Aprilo, leggilo e fammi sapere cosa ne pensi rispondendo direttamente a questa email.</p>
+        <div class="comic-container">
+          ${imagesHTML}
+        </div>
+        
+        <p>Ti è piaciuto? Fammi sapere cosa ne pensi rispondendo direttamente a questa email.</p>
         
         <p>Ricorda che puoi anche condividere questo contenuto con altri founder traumatizzati - la miseria ama compagnia.</p>
         
@@ -238,4 +179,86 @@ function generateComicEmail(comic: Comic, user: any) {
     </body>
     </html>
   `;
+}
+
+// POST /api/send-comic - Invia un fumetto via email
+export async function POST(request: NextRequest) {
+  try {
+    if (!(await isAdmin(request))) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { comicId } = await request.json();
+    
+    if (!comicId) {
+      return NextResponse.json({ error: 'ID fumetto richiesto' }, { status: 400 });
+    }
+
+    const db = await getDatabase();
+    
+    // Recupero il fumetto
+    const comic = await db.collection('comics').findOne({ _id: new ObjectId(comicId) }) as Comic;
+    
+    if (!comic) {
+      return NextResponse.json({ error: 'Fumetto non trovato' }, { status: 404 });
+    }
+    
+    // Verifichiamo che ci siano immagini
+    if (!comic.images || comic.images.length === 0) {
+      return NextResponse.json({ error: 'Il fumetto non contiene immagini' }, { status: 400 });
+    }
+
+    // Recupero tutti gli utenti approvati
+    const users = await db.collection('users').find({ 
+      isApproved: true, 
+      isVerified: true 
+    }).toArray();
+    
+    if (users.length === 0) {
+      return NextResponse.json({ error: 'Nessun utente trovato per l\'invio' }, { status: 404 });
+    }
+
+    // Preparo l'HTML dell'email
+    const emailHTML = generateComicEmail(comic, users[0]);
+    
+    // Per ogni utente, invia l'email
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (const user of users) {
+      try {
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
+          to: user.email,
+          subject: `Exit Wounds - ${comic.title}`,
+          html: emailHTML
+        });
+        successCount++;
+      } catch (error) {
+        console.error(`Errore nell'invio dell'email a ${user.email}:`, error);
+        errorCount++;
+      }
+    }
+    
+    // Aggiorno il record del fumetto con le informazioni di invio
+    await db.collection('comics').updateOne(
+      { _id: new ObjectId(comicId) },
+      { 
+        $set: { 
+          sentAt: new Date(),
+          recipients: successCount
+        } 
+      }
+    );
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: `Fumetto inviato con successo a ${successCount} utenti. ${errorCount} errori.`,
+      successCount,
+      errorCount
+    });
+  } catch (error) {
+    console.error('Errore nell\'invio del fumetto:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
 } 
