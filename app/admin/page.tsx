@@ -4,6 +4,13 @@ import { useState, useEffect, FormEvent, useRef, DragEvent } from 'react';
 import { Comic } from '@/lib/models/Comic';
 import { useRouter } from 'next/navigation';
 
+// Dimensione massima per immagine in MB
+const MAX_IMAGE_SIZE_MB = 2;
+// Qualità di compressione (0-1)
+const IMAGE_COMPRESSION_QUALITY = 0.7;
+// Dimensione massima in pixel (larghezza o altezza)
+const MAX_IMAGE_DIMENSION = 1200;
+
 export default function AdminPage() {
   const [comics, setComics] = useState<Comic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,7 +120,7 @@ export default function AdminPage() {
     }
   };
 
-  const processUploadedFiles = (files: File[]) => {
+  const processUploadedFiles = async (files: File[]) => {
     // Filtra solo le immagini
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
     
@@ -122,14 +129,115 @@ export default function AdminPage() {
       return;
     }
     
-    // Aggiorna lo stato con i nuovi file
-    setImages(prevImages => [...prevImages, ...imageFiles]);
-    
-    // Crea URL di anteprima per le nuove immagini
-    const newPreviewUrls = imageFiles.map(file => URL.createObjectURL(file));
-    setPreviewUrls(prevUrls => [...prevUrls, ...newPreviewUrls]);
-    
-    setFormError('');
+    try {
+      // Impostiamo un messaggio di caricamento durante la compressione
+      setFormError('Compressione delle immagini in corso...');
+      
+      // Array per memorizzare le immagini compresse
+      const compressedImages: File[] = [];
+      const newPreviewUrls: string[] = [];
+      
+      // Comprimiamo ogni immagine
+      for (const file of imageFiles) {
+        // Controlliamo se l'immagine è già abbastanza piccola
+        if (file.size <= MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+          compressedImages.push(file);
+          newPreviewUrls.push(URL.createObjectURL(file));
+          continue;
+        }
+        
+        // Comprimiamo l'immagine
+        const compressedFile = await compressImage(file);
+        compressedImages.push(compressedFile);
+        newPreviewUrls.push(URL.createObjectURL(compressedFile));
+      }
+      
+      // Aggiorna lo stato con i file compressi
+      setImages(prevImages => [...prevImages, ...compressedImages]);
+      setPreviewUrls(prevUrls => [...prevUrls, ...newPreviewUrls]);
+      setFormError('');
+    } catch (error) {
+      console.error('Errore durante la compressione delle immagini:', error);
+      setFormError('Errore durante la preparazione delle immagini. Riprova.');
+    }
+  };
+  
+  // Funzione per comprimere un'immagine
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        const img = new Image();
+        
+        img.onload = () => {
+          // Calcola le nuove dimensioni mantenendo le proporzioni
+          let width = img.width;
+          let height = img.height;
+          
+          // Ridimensiona se necessario
+          if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
+            if (width > height) {
+              height = Math.round(height * MAX_IMAGE_DIMENSION / width);
+              width = MAX_IMAGE_DIMENSION;
+            } else {
+              width = Math.round(width * MAX_IMAGE_DIMENSION / height);
+              height = MAX_IMAGE_DIMENSION;
+            }
+          }
+          
+          // Crea un canvas per la compressione
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Disegna l'immagine ridimensionata sul canvas
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Impossibile ottenere il contesto del canvas'));
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Converti a blob con la compressione
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Errore nella compressione dell\'immagine'));
+                return;
+              }
+              
+              // Crea un nuovo File dall'immagine compressa
+              const compressedFile = new File(
+                [blob],
+                `compressed_${file.name}`,
+                {
+                  type: 'image/jpeg',
+                  lastModified: Date.now()
+                }
+              );
+              
+              resolve(compressedFile);
+            },
+            'image/jpeg',
+            IMAGE_COMPRESSION_QUALITY
+          );
+        };
+        
+        img.onerror = () => {
+          reject(new Error('Errore nel caricamento dell\'immagine'));
+        };
+        
+        img.src = event.target?.result as string;
+      };
+      
+      reader.onerror = () => {
+        reject(new Error('Errore nella lettura del file'));
+      };
+      
+      reader.readAsDataURL(file);
+    });
   };
 
   const removeImage = (index: number) => {
@@ -175,35 +283,81 @@ export default function AdminPage() {
     try {
       setUploading(true);
       setUploadProgress(0);
-      setFormError(`Caricamento in corso... Attendere prego. ${images.length} immagini da caricare.`);
+      setFormError(`Preparazione immagini... Attendere prego`);
       
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('description', description);
+      // Array per memorizzare le informazioni delle immagini caricate
+      const uploadedImages: { url: string; cloudinaryId: string; order: number }[] = [];
       
-      // Aggiungiamo tutte le immagini con chiavi distinte
-      images.forEach((image, index) => {
-        formData.append(`image${index}`, image);
-      });
+      // Carica ogni immagine separatamente
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        setFormError(`Caricamento immagine ${i + 1} di ${images.length}...`);
+        
+        // Calcola la percentuale di avanzamento
+        const progressPerImage = 100 / images.length;
+        setUploadProgress((i * progressPerImage));
+        
+        try {
+          // Prepara i dati per il caricamento
+          const formData = new FormData();
+          formData.append('file', image);
+          formData.append('originalFilename', image.name);
+          
+          // Carica l'immagine
+          const response = await fetch('/api/admin/upload-chunk', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: formData
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Errore nel caricamento dell'immagine ${i + 1}: ${response.statusText}`);
+          }
+          
+          const result = await response.json();
+          
+          if (!result.success) {
+            throw new Error(result.error || 'Errore nel caricamento dell\'immagine');
+          }
+          
+          // Aggiungi l'immagine all'array di immagini caricate
+          uploadedImages.push({
+            url: result.url,
+            cloudinaryId: result.publicId,
+            order: i
+          });
+        } catch (error) {
+          console.error(`Errore nel caricamento dell'immagine ${i + 1}:`, error);
+          throw new Error(`Errore nel caricamento dell'immagine ${i + 1}`);
+        }
+      }
       
-      // Ottimizziamo la richiesta per gestire file di grandi dimensioni
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000); // 10 minuti di timeout
+      // Aggiorna l'avanzamento
+      setUploadProgress(90);
+      setFormError('Creazione del fumetto...');
       
-      const response = await fetch('/api/admin/comics', {
+      // Crea il fumetto con le immagini caricate
+      const comicData = {
+        title,
+        description,
+        images: uploadedImages
+      };
+      
+      // Invia i dati del fumetto senza le immagini (ormai già caricate)
+      const response = await fetch('/api/admin/comics/create', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
         },
-        body: formData,
-        signal: controller.signal
+        body: JSON.stringify(comicData)
       });
-      
-      clearTimeout(timeoutId);
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Errore nel caricamento del fumetto');
+        throw new Error(errorData.error || 'Errore nella creazione del fumetto');
       }
       
       const result = await response.json();
@@ -219,6 +373,9 @@ export default function AdminPage() {
       // Rilascia gli URL di anteprima per evitare memory leak
       previewUrls.forEach(url => URL.revokeObjectURL(url));
       
+      // Aggiorna l'avanzamento
+      setUploadProgress(100);
+      
       // Refresh comics list
       fetchComics();
     } catch (err: any) {
@@ -226,7 +383,6 @@ export default function AdminPage() {
       setFormError(`Errore durante il caricamento del fumetto: ${err.message || 'Si è verificato un errore'}`);
     } finally {
       setUploading(false);
-      setUploadProgress(100);
     }
   };
 
