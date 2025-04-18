@@ -66,6 +66,7 @@ export default function EmailEditor({ params }: EmailEditorProps) {
   const fetchComic = async (key: string) => {
     try {
       setLoading(true);
+      console.log('Recupero fumetto con ID:', id);
       
       // Recupera il fumetto dall'API
       const response = await fetch(`/api/admin/comics?id=${id}`, {
@@ -75,10 +76,13 @@ export default function EmailEditor({ params }: EmailEditorProps) {
       });
       
       if (!response.ok) {
-        throw new Error('Errore nel recupero del fumetto');
+        const errorData = await response.json();
+        console.error('Risposta API errore:', errorData);
+        throw new Error(errorData.error || 'Errore nel recupero del fumetto');
       }
       
       const data = await response.json();
+      console.log('Risposta API fumetto:', data);
       
       if (data.comic) {
         setComic(data.comic);
@@ -90,11 +94,12 @@ export default function EmailEditor({ params }: EmailEditorProps) {
         setTextBefore(`Ciao,\n\nEcco il nuovo fumetto della tua serie preferita di fallimenti imprenditoriali e traumi da startup!`);
         setTextAfter(`Ti è piaciuto? Fammi sapere cosa ne pensi rispondendo direttamente a questa email.\n\nRicorda che puoi anche condividere questo contenuto con altri founder traumatizzati - la miseria ama compagnia.`);
       } else {
-        throw new Error('Fumetto non trovato');
+        console.error('Struttura risposta API:', data);
+        throw new Error('Fumetto non trovato nella risposta API');
       }
     } catch (err) {
-      console.error('Errore durante il recupero del fumetto:', err);
-      setError('Errore nel caricamento del fumetto.');
+      console.error('Errore completo durante il recupero del fumetto:', err);
+      setError(`Errore nel caricamento del fumetto: ${err instanceof Error ? err.message : 'Errore sconosciuto'}`);
     } finally {
       setLoading(false);
     }

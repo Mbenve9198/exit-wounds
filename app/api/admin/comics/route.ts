@@ -34,7 +34,7 @@ async function isAdmin(request: NextRequest) {
   }
 }
 
-// GET /api/admin/comics - Ottieni tutti i fumetti
+// GET /api/admin/comics - Ottieni tutti i fumetti o un fumetto specifico per ID
 export async function GET(request: NextRequest) {
   try {
     console.log('Richiesta GET /api/admin/comics ricevuta');
@@ -45,7 +45,34 @@ export async function GET(request: NextRequest) {
     }
 
     const db = await getDatabase();
-    console.log('Connessione al database riuscita, recupero fumetti');
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+    
+    // Se è specificato un ID, restituisci quel fumetto specifico
+    if (id) {
+      console.log(`Richiesto fumetto specifico con ID: ${id}`);
+      try {
+        const objectId = new ObjectId(id);
+        const comic = await db.collection('comics').findOne({ _id: objectId });
+        
+        if (!comic) {
+          console.error(`Fumetto con ID ${id} non trovato nel database`);
+          return NextResponse.json({ error: 'Fumetto non trovato' }, { status: 404 });
+        }
+        
+        console.log(`Fumetto trovato: ${comic.title}`);
+        return NextResponse.json({ comic });
+      } catch (error) {
+        console.error(`Errore nella conversione dell'ID o nel recupero del fumetto: ${error}`);
+        return NextResponse.json({ 
+          error: 'ID fumetto non valido o fumetto non trovato',
+          details: error instanceof Error ? error.message : 'Errore sconosciuto'
+        }, { status: 400 });
+      }
+    }
+    
+    // Altrimenti restituisci tutti i fumetti
+    console.log('Connessione al database riuscita, recupero di tutti i fumetti');
     
     const comics = await db.collection('comics').find({}).sort({ createdAt: -1 }).toArray();
     console.log(`Trovati ${comics.length} fumetti in totale`);

@@ -512,6 +512,7 @@ export default function AdminPage() {
   };
 
   const sendComic = async (id: string) => {
+    console.log(`Reindirizzamento all'editor email per il fumetto con ID: ${id}`);
     router.push(`/admin/email-editor/${id}`);
   };
 
