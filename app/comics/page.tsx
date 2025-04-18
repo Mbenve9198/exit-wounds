@@ -1,22 +1,33 @@
 import { getDatabase } from '@/lib/mongodb';
 import Link from 'next/link';
 import { Comic } from '@/lib/models/Comic';
+import { cache } from 'react';
 
-// Server component per il recupero dei fumetti
-async function getPublishedComics(): Promise<Comic[]> {
+// Funzione cached per evitare chiamate DB duplicate
+const getPublishedComics = cache(async (): Promise<Comic[]> => {
+  console.log('Recupero fumetti pubblicati...');
   try {
     const db = await getDatabase();
+    console.log('Connessione al database riuscita');
+    
     const comics = await db.collection('comics')
       .find({ published: true })
       .sort({ createdAt: -1 })
-      .toArray() as unknown as Comic[];
+      .toArray() as Comic[];
+    
+    console.log(`Trovati ${comics.length} fumetti pubblicati`);
+    
+    // Log di debug per ogni fumetto
+    comics.forEach((comic, index) => {
+      console.log(`Fumetto ${index + 1}: ${comic.title}, Pubblicato: ${comic.published}, Immagini: ${comic.images?.length || 0}`);
+    });
     
     return comics;
   } catch (error) {
     console.error('Errore nel recupero dei fumetti:', error);
     return [];
   }
-}
+});
 
 export default async function ComicsPage() {
   const comics = await getPublishedComics();
@@ -54,6 +65,9 @@ export default async function ComicsPage() {
             </svg>
             <h2 className="text-xl font-semibold mt-4">Nessun fumetto disponibile</h2>
             <p className="text-gray-500 mt-2">Torna più tardi per nuovi contenuti</p>
+            <p className="text-xs text-gray-400 mt-4">
+              Nota: se hai caricato fumetti nell'area admin, assicurati di averli impostati come "Pubblicati".
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

@@ -389,6 +389,7 @@ export default function AdminPage() {
   const publishComic = async (id: string, publish: boolean) => {
     try {
       setLoading(true);
+      console.log(`${publish ? 'Pubblicazione' : 'Nascondimento'} fumetto con ID: ${id}`);
       
       const response = await fetch(`/api/admin/comics?id=${id}`, {
         method: 'PUT',
@@ -400,13 +401,30 @@ export default function AdminPage() {
       });
       
       if (!response.ok) {
-        throw new Error('Errore nell\'aggiornamento del fumetto');
+        const errorData = await response.json();
+        const errorMessage = errorData.error || 'Errore nell\'aggiornamento del fumetto';
+        console.error(errorMessage);
+        throw new Error(errorMessage);
       }
+      
+      const result = await response.json();
+      console.log('Risultato operazione:', result);
+      
+      // Aggiungi un feedback visivo
+      if (publish) {
+        setSuccessMessage(`Fumetto pubblicato con successo! Ora è visibile nella pagina pubblica.`);
+      } else {
+        setSuccessMessage(`Fumetto nascosto con successo.`);
+      }
+      
+      setTimeout(() => setSuccessMessage(''), 3000);
       
       // Refresh comics list
       fetchComics();
     } catch (err) {
-      setError('Errore durante l\'aggiornamento del fumetto.');
+      console.error('Errore durante l\'aggiornamento del fumetto:', err);
+      setError(`Errore durante ${publish ? 'la pubblicazione' : 'il nascondimento'} del fumetto.`);
+      setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
     }

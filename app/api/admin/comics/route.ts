@@ -157,6 +157,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     if (!(await isAdmin(request))) {
+      console.error('Accesso non autorizzato all\'API PUT comics');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -164,36 +165,61 @@ export async function PUT(request: NextRequest) {
     const id = url.searchParams.get('id');
     
     if (!id) {
+      console.error('ID fumetto mancante nella richiesta PUT');
       return NextResponse.json({ error: 'ID fumetto richiesto' }, { status: 400 });
     }
 
     const data = await request.json();
     const { title, description, published } = data;
     
-    const db = await getDatabase();
-    const result = await db.collection('comics').updateOne(
-      { _id: new ObjectId(id) },
-      { 
-        $set: { 
-          ...(title && { title }),
-          ...(description && { description }),
-          ...(published !== undefined && { published }),
-          updatedAt: new Date() 
-        } 
-      }
-    );
+    console.log(`Aggiornamento fumetto ${id}:`);
+    console.log('- title:', title);
+    console.log('- description:', description);
+    console.log('- published:', published);
     
-    if (result.matchedCount === 0) {
+    const db = await getDatabase();
+    
+    // Prima verifica che il fumetto esista
+    const comic = await db.collection('comics').findOne({ _id: new ObjectId(id) });
+    if (!comic) {
+      console.error(`Fumetto non trovato con ID: ${id}`);
       return NextResponse.json({ error: 'Fumetto non trovato' }, { status: 404 });
     }
     
+    const updateFields: Record<string, any> = { 
+      updatedAt: new Date() 
+    };
+    
+    if (title !== undefined) updateFields.title = title;
+    if (description !== undefined) updateFields.description = description;
+    if (published !== undefined) updateFields.published = published;
+    
+    const result = await db.collection('comics').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateFields }
+    );
+    
+    if (result.matchedCount === 0) {
+      console.error(`Nessun fumetto corrisponde all'ID: ${id}`);
+      return NextResponse.json({ error: 'Fumetto non trovato' }, { status: 404 });
+    }
+    
+    console.log(`Fumetto ${id} aggiornato con successo. Modificati: ${result.modifiedCount} documenti`);
+    
     return NextResponse.json({ 
       success: true, 
-      message: 'Fumetto aggiornato con successo'
+      message: 'Fumetto aggiornato con successo',
+      updateInfo: {
+        matched: result.matchedCount,
+        modified: result.modifiedCount
+      }
     });
   } catch (error) {
     console.error('Errore nell\'aggiornamento del fumetto:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : 'Errore sconosciuto'
+    }, { status: 500 });
   }
 }
 
