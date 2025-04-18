@@ -2,6 +2,7 @@ import { getDatabase } from '@/lib/mongodb';
 import { Comic } from '@/lib/models/Comic';
 import { ObjectId } from 'mongodb';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import './reader.css'; // Importo un file CSS separato per gli stili
 
@@ -15,7 +16,7 @@ async function getComic(id: string): Promise<Comic | null> {
     
     return comic;
   } catch (error) {
-    console.error('Errore nel recupero del fumetto:', error);
+    console.error('Error retrieving comic:', error);
     return null;
   }
 }
@@ -33,27 +34,35 @@ export default async function ComicReaderPage({ params }: { params: { id: string
   
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {/* Header Minimale */}
-      <header className="bg-black text-white py-4 px-4 z-10 shadow-md">
+      {/* Header with image */}
+      <header className="py-4 px-4 bg-white border-b border-gray-200">
         <div className="container mx-auto flex justify-between items-center">
-          <Link href="/comics" className="text-white hover:text-gray-300 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <Link href="/comics" className="flex items-center text-gray-700 hover:text-gray-900">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Indietro
+            Back to comics
           </Link>
           
-          <h1 className="text-lg font-semibold truncate max-w-[200px]">{comic.title}</h1>
+          <Link href="/" className="inline-block">
+            <Image 
+              src="/images/header_comics.png" 
+              alt="Exit Wounds" 
+              width={150}
+              height={50}
+              className="h-auto"
+            />
+          </Link>
           
           <div className="w-6"></div> {/* Elemento vuoto per bilanciare il flex */}
         </div>
       </header>
       
       {/* Titolo e descrizione */}
-      <div className="bg-black text-white px-4 py-6 border-b border-gray-800">
+      <div className="bg-white text-gray-800 px-4 py-6 border-b border-gray-200">
         <div className="container mx-auto">
           <h1 className="text-2xl font-bold">{comic.title}</h1>
-          <p className="text-gray-400 mt-2">{comic.description}</p>
+          <p className="text-gray-600 mt-2">{comic.description}</p>
         </div>
       </div>
       
@@ -67,7 +76,7 @@ export default async function ComicReaderPage({ params }: { params: { id: string
             >
               <img 
                 src={image.url} 
-                alt={`${comic.title} - Pagina ${index + 1}`}
+                alt={`${comic.title} - Page ${index + 1}`}
                 className="w-full h-auto shadow-md rounded"
                 loading="lazy"
               />
@@ -76,10 +85,10 @@ export default async function ComicReaderPage({ params }: { params: { id: string
         </div>
       </div>
       
-      {/* Footer minimale */}
-      <footer className="bg-black text-white py-3 px-4 border-t border-gray-800 text-center text-sm">
+      {/* Footer with white background */}
+      <footer className="bg-white text-gray-800 py-3 px-4 border-t border-gray-200 text-center text-sm">
         <div className="container mx-auto">
-          <p>© 2025 Exit Wounds</p>
+          <p>© 2025 Exit Wounds. All rights reserved.</p>
         </div>
       </footer>
     </div>

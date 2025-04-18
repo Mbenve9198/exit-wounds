@@ -1,61 +1,50 @@
 import { getDatabase } from '@/lib/mongodb';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Comic } from '@/lib/models/Comic';
-import { cache } from 'react';
 
-// Funzione cached per evitare chiamate DB duplicate
-const getPublishedComics = cache(async (): Promise<Comic[]> => {
-  console.log('Recupero fumetti pubblicati...');
+// Server component for fetching published comics
+async function getPublishedComics(): Promise<Comic[]> {
   try {
     const db = await getDatabase();
-    console.log('Connessione al database riuscita');
-    
     const comics = await db.collection('comics')
       .find({ published: true })
       .sort({ createdAt: -1 })
-      .toArray() as Comic[];
-    
-    console.log(`Trovati ${comics.length} fumetti pubblicati`);
-    
-    // Log di debug per ogni fumetto
-    comics.forEach((comic, index) => {
-      console.log(`Fumetto ${index + 1}: ${comic.title}, Pubblicato: ${comic.published}, Immagini: ${comic.images?.length || 0}`);
-    });
+      .toArray() as unknown as Comic[];
     
     return comics;
   } catch (error) {
-    console.error('Errore nel recupero dei fumetti:', error);
+    console.error('Error retrieving comics:', error);
     return [];
   }
-});
+}
 
 export default async function ComicsPage() {
   const comics = await getPublishedComics();
   
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {/* Header */}
-      <header className="bg-black text-white py-6">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="text-2xl font-bold">
-              EXIT WOUNDS
-            </Link>
-            
-            <nav>
-              <Link href="/" className="text-gray-300 hover:text-white">
-                Home
-              </Link>
-            </nav>
-          </div>
+    <div className="bg-white min-h-screen flex flex-col">
+      {/* Header with image */}
+      <header className="py-6 bg-white">
+        <div className="container mx-auto px-4 text-center">
+          <Link href="/" className="inline-block">
+            <Image 
+              src="/images/header_comics.png" 
+              alt="Exit Wounds" 
+              width={300}
+              height={100}
+              className="h-auto"
+              priority
+            />
+          </Link>
         </div>
       </header>
       
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-2 text-center">Fumetti</h1>
+      <main className="container mx-auto px-4 py-8 flex-grow">
+        <h1 className="text-3xl font-bold mb-2 text-center">Comics</h1>
         <p className="text-gray-600 mb-8 text-center">
-          Esplora la collezione di traumatiche avventure imprenditoriali
+          Explore the collection of traumatic entrepreneurial adventures
         </p>
         
         {comics.length === 0 ? (
@@ -63,11 +52,8 @@ export default async function ComicsPage() {
             <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
             </svg>
-            <h2 className="text-xl font-semibold mt-4">Nessun fumetto disponibile</h2>
-            <p className="text-gray-500 mt-2">Torna più tardi per nuovi contenuti</p>
-            <p className="text-xs text-gray-400 mt-4">
-              Nota: se hai caricato fumetti nell'area admin, assicurati di averli impostati come "Pubblicati".
-            </p>
+            <h2 className="text-xl font-semibold mt-4">No comics available</h2>
+            <p className="text-gray-500 mt-2">Check back later for new content</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -92,13 +78,13 @@ export default async function ComicsPage() {
                     </div>
                   )}
                   
-                  {/* Overlay con sfumatura per il testo */}
+                  {/* Overlay with gradient for text */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-70"></div>
                   
-                  {/* Informazioni fumetto */}
+                  {/* Comic information */}
                   <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                     <h2 className="text-xl font-bold truncate">{comic.title}</h2>
-                    <p className="text-sm opacity-90">{comic.images?.length || 0} pagine</p>
+                    <p className="text-sm opacity-90">{comic.images?.length || 0} pages</p>
                   </div>
                 </div>
               </Link>
@@ -107,12 +93,12 @@ export default async function ComicsPage() {
         )}
       </main>
       
-      {/* Footer */}
-      <footer className="bg-black text-gray-400 py-8">
+      {/* Footer with white background */}
+      <footer className="bg-white text-gray-800 py-8 border-t border-gray-200">
         <div className="container mx-auto px-4 text-center">
-          <p>© 2025 Exit Wounds. Tutti i diritti riservati.</p>
+          <p>© 2025 Exit Wounds. All rights reserved.</p>
           <p className="mt-2 text-sm">
-            Un progetto di Marco Benvenuti, un ex-fondatore traumatizzato.
+            A project by Marco Benvenuti, a traumatized ex-founder.
           </p>
         </div>
       </footer>
