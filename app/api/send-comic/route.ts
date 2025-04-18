@@ -71,16 +71,29 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
     }
   `;
 
-  // Formattiamo il testo prima e dopo con paragrafi HTML
-  const formattedTextBefore = textBefore 
-    ? textBefore.split('\n').map(p => p ? `<p>${p}</p>` : `<br/>`).join('\n')
-    : `<p>Ciao ${user.nickname || 'lettore'},</p>
-       <p>Ecco il nuovo fumetto della tua serie preferita di fallimenti imprenditoriali e traumi da startup!</p>`;
+  // Otteniamo il nickname dell'utente o un fallback
+  const userNickname = user?.nickname || 'lettore';
 
-  const formattedTextAfter = textAfter
-    ? textAfter.split('\n').map(p => p ? `<p>${p}</p>` : `<br/>`).join('\n')
-    : `<p>Ti è piaciuto? Fammi sapere cosa ne pensi rispondendo direttamente a questa email.</p>
-       <p>Ricorda che puoi anche condividere questo contenuto con altri founder traumatizzati - la miseria ama compagnia.</p>`;
+  // Sostituiamo i placeholder nei testi con i valori reali
+  const processTemplate = (text: string) => {
+    return text.replace(/\{\{nickname\}\}/g, userNickname);
+  };
+
+  // Formattiamo il testo prima e dopo con paragrafi HTML
+  const defaultTextBefore = `<p>Ciao ${userNickname},</p>
+    <p>Ecco il nuovo fumetto della tua serie preferita di fallimenti imprenditoriali e traumi da startup!</p>`;
+
+  const defaultTextAfter = `<p>Ti è piaciuto? Fammi sapere cosa ne pensi rispondendo direttamente a questa email.</p>
+    <p>Ricorda che puoi anche condividere questo contenuto con altri founder traumatizzati - la miseria ama compagnia.</p>`;
+
+  // Usiamo i testi forniti dall'utente o i default, e processiamo i placeholder
+  const processedTextBefore = textBefore 
+    ? processTemplate(textBefore).split('\n').map(p => p ? `<p>${p}</p>` : `<br/>`).join('\n')
+    : defaultTextBefore;
+
+  const processedTextAfter = textAfter
+    ? processTemplate(textAfter).split('\n').map(p => p ? `<p>${p}</p>` : `<br/>`).join('\n')
+    : defaultTextAfter;
 
   // Creiamo il link di unsubscribe
   const unsubscribeLink = user && user.email
@@ -201,7 +214,7 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
         </div>
         
         <div class="text-before">
-          ${formattedTextBefore}
+          ${processedTextBefore}
         </div>
         
         <p>${comic.description}</p>
@@ -211,7 +224,7 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
         </div>
         
         <div class="text-after">
-          ${formattedTextAfter}
+          ${processedTextAfter}
         </div>
         
         <div class="footer">

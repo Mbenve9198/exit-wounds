@@ -91,7 +91,7 @@ export default function EmailEditor({ params }: EmailEditorProps) {
         setEmailSubject(`Exit Wounds - ${data.comic.title}`);
         
         // Imposta testo predefinito prima e dopo
-        setTextBefore(`Ciao,\n\nEcco il nuovo fumetto della tua serie preferita di fallimenti imprenditoriali e traumi da startup!`);
+        setTextBefore(`Ciao {{nickname}},\n\nEcco il nuovo fumetto della tua serie preferita di fallimenti imprenditoriali e traumi da startup!`);
         setTextAfter(`Ti è piaciuto? Fammi sapere cosa ne pensi rispondendo direttamente a questa email.\n\nRicorda che puoi anche condividere questo contenuto con altri founder traumatizzati - la miseria ama compagnia.`);
       } else {
         console.error('Struttura risposta API:', data);
@@ -223,9 +223,12 @@ export default function EmailEditor({ params }: EmailEditorProps) {
     router.push('/admin');
   };
 
-  // Converti il testo con \n in paragrafi HTML
+  // Converti il testo con \n in paragrafi HTML e sostituisci i placeholder
   const formatTextToParagraphs = (text: string) => {
-    return text.split('\n').map((paragraph, index) => (
+    // Sostituisci i placeholder
+    const processed = text.replace(/\{\{nickname\}\}/g, "Nome Utente");
+    
+    return processed.split('\n').map((paragraph, index) => (
       paragraph ? <p key={index} style={{marginBottom: '15px'}}>{paragraph}</p> : <br key={index} />
     ));
   };
@@ -316,6 +319,41 @@ export default function EmailEditor({ params }: EmailEditorProps) {
                   value={emailSubject}
                   onChange={(e) => setEmailSubject(e.target.value)}
                 />
+              </div>
+              
+              <div className="mb-2 bg-yellow-50 p-3 rounded-md border border-yellow-200">
+                <p className="text-sm text-gray-700 mb-1 font-medium">Campi dinamici disponibili:</p>
+                <div className="flex flex-wrap gap-2">
+                  <button 
+                    className="text-xs bg-yellow-200 hover:bg-yellow-300 text-black font-medium py-1 px-2 rounded border border-yellow-300"
+                    onClick={() => {
+                      // Inserisce il campo per il nickname nel punto in cui si trova il cursore nell'ultimo campo di testo selezionato
+                      const activeElement = document.activeElement as HTMLTextAreaElement;
+                      if (activeElement && (activeElement.id === 'textBefore' || activeElement.id === 'textAfter')) {
+                        const cursorPosition = activeElement.selectionStart || 0;
+                        const currentValue = activeElement.id === 'textBefore' ? textBefore : textAfter;
+                        const newValue = currentValue.substring(0, cursorPosition) + 
+                                        '{{nickname}}' + 
+                                        currentValue.substring(cursorPosition);
+                        
+                        if (activeElement.id === 'textBefore') {
+                          setTextBefore(newValue);
+                        } else {
+                          setTextAfter(newValue);
+                        }
+                        
+                        // Imposta il focus di nuovo sull'elemento dopo l'aggiornamento
+                        setTimeout(() => {
+                          activeElement.focus();
+                          activeElement.setSelectionRange(cursorPosition + 12, cursorPosition + 12);
+                        }, 0);
+                      }
+                    }}
+                  >
+                    Inserisci {{nickname}}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Clicca sul pulsante per inserire il campo nel testo. Il campo {{nickname}} verrà sostituito con il nome di ogni utente.</p>
               </div>
               
               <div className="mb-4">
