@@ -12,11 +12,12 @@ export default function Home() {
       {/* Header - Square image with adjusted position */}
       <div className="w-full max-w-md mx-auto aspect-square relative bg-white">
         <Image
-          src="/images/header.png"
+          src="/images/header-animated.gif"
           alt="EXIT WOUNDS - A comic for founders who survived (barely)"
           fill
           className="object-contain"
           priority
+          unoptimized={true}
         />
       </div>
 
