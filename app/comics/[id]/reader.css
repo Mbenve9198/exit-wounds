@@ -2,12 +2,16 @@
 .reader-container {
   width: 100%;
   position: relative;
+  padding: 0 16px;
 }
 
 /* Stili per supportare il pinch-to-zoom */
 .comic-page {
   touch-action: manipulation;
   position: relative;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Stile per la scrollbar verticale */
@@ -15,18 +19,22 @@
   width: 5px;
 }
 
-.scrollbar-thumb-gray-700::-webkit-scrollbar-thumb {
-  background-color: #4B5563;
+.scrollbar-thumb-gray-400::-webkit-scrollbar-thumb {
+  background-color: #9CA3AF;
   border-radius: 5px;
 }
 
-.scrollbar-track-gray-900::-webkit-scrollbar-track {
-  background-color: #111827;
+.scrollbar-track-gray-100::-webkit-scrollbar-track {
+  background-color: #F3F4F6;
 }
 
 /* Nascondi scrollbar su mobile */
 @media (max-width: 768px) {
   .scrollbar-thin::-webkit-scrollbar {
     display: none;
+  }
+  
+  .comic-page {
+    margin-bottom: 12px;
   }
 } 

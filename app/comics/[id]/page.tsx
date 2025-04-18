@@ -32,7 +32,7 @@ export default async function ComicReaderPage({ params }: { params: { id: string
   const orderedImages = [...(comic.images || [])].sort((a, b) => a.order - b.order);
   
   return (
-    <div className="min-h-screen flex flex-col bg-gray-900">
+    <div className="min-h-screen flex flex-col bg-white">
       {/* Header Minimale */}
       <header className="bg-black text-white py-4 px-4 z-10 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
@@ -58,17 +58,17 @@ export default async function ComicReaderPage({ params }: { params: { id: string
       </div>
       
       {/* Reader del fumetto */}
-      <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-        <div className="reader-container mx-auto max-w-2xl pb-20">
+      <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+        <div className="reader-container mx-auto max-w-2xl pt-8 pb-20">
           {orderedImages.map((image, index) => (
             <div 
               key={index}
-              className="comic-page mb-1"
+              className="comic-page mb-4"
             >
               <img 
                 src={image.url} 
                 alt={`${comic.title} - Pagina ${index + 1}`}
-                className="w-full h-auto"
+                className="w-full h-auto shadow-md rounded"
                 loading="lazy"
               />
             </div>
