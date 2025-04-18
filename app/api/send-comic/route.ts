@@ -217,6 +217,7 @@ async function sendToAudience(audienceId: string, emailSubject: string, emailHTM
     // Invia email all'audience specificata usando Resend
     const result = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
+      replyTo: 'marco.benvenuti91@gmail.com',
       subject: emailSubject,
       html: emailHTML,
       tags: [{ name: 'category', value: 'comic' }],
@@ -317,6 +318,7 @@ export async function POST(request: NextRequest) {
           await resend.emails.send({
             from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
             to: user.email,
+            replyTo: 'marco.benvenuti91@gmail.com',
             subject: subject,
             html: emailHTML
           });
