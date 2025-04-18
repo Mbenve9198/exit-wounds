@@ -31,6 +31,8 @@ export default function AdminPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingComic, setEditingComic] = useState<Comic | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -546,6 +548,97 @@ export default function AdminPage() {
     }
   };
 
+  // Funzione per avviare la modifica di un fumetto
+  const startEditComic = (comic: Comic) => {
+    // Impostiamo lo stato di modifica
+    setIsEditing(true);
+    setEditingComic(comic);
+    setSelectedComicId(comic._id?.toString() || null);
+    
+    // Popoliamo il form con i dati del fumetto
+    setTitle(comic.title);
+    setDescription(comic.description);
+    
+    // Creiamo le anteprime delle immagini esistenti
+    if (comic.images && comic.images.length > 0) {
+      // Ordiniamo le immagini per ordine
+      const orderedImages = [...comic.images].sort((a, b) => a.order - b.order);
+      setPreviewUrls(orderedImages.map(img => img.url));
+    }
+    
+    // Scrolliamo verso l'alto per mostrare il form
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // Funzione per annullare la modifica
+  const cancelEdit = () => {
+    // Reset dello stato di modifica
+    setIsEditing(false);
+    setEditingComic(null);
+    setSelectedComicId(null);
+    
+    // Reset del form
+    setTitle('');
+    setDescription('');
+    setImages([]);
+    setPreviewUrls([]);
+    setFormError('');
+  };
+
+  // Funzione per salvare le modifiche al fumetto
+  const saveEditedComic = async () => {
+    try {
+      setLoading(true);
+      
+      // Preparazione dati da aggiornare
+      const updateData = {
+        title,
+        description
+      };
+      
+      // Invio delle modifiche
+      const response = await fetch(`/api/admin/comics?id=${selectedComicId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore nell\'aggiornamento del fumetto');
+      }
+      
+      // Successo
+      setSuccessMessage('Fumetto aggiornato con successo!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      // Reset dello stato di modifica
+      setIsEditing(false);
+      setEditingComic(null);
+      setSelectedComicId(null);
+      
+      // Reset del form
+      setTitle('');
+      setDescription('');
+      setImages([]);
+      setPreviewUrls([]);
+      
+      // Aggiorniamo la lista
+      fetchComics();
+    } catch (err) {
+      console.error('Errore durante la modifica del fumetto:', err);
+      setFormError(`Errore durante la modifica del fumetto: ${err instanceof Error ? err.message : 'Si è verificato un errore'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -611,9 +704,11 @@ export default function AdminPage() {
           </div>
         )}
         
-        {/* Two-column layout for comic creation */}
+        {/* Two-column layout for comic creation/editing */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold mb-4">Crea Nuovo Fumetto</h2>
+          <h2 className="text-xl font-bold mb-4">
+            {isEditing ? `Modifica Fumetto: ${editingComic?.title}` : 'Crea Nuovo Fumetto'}
+          </h2>
           
           {successMessage && (
             <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
@@ -630,7 +725,14 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left column: Form */}
             <div>
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (isEditing) {
+                  saveEditedComic();
+                } else {
+                  handleSubmit(e);
+                }
+              }}>
                 <div className="mb-4">
                   <label className="block text-gray-700 mb-2" htmlFor="title">
                     Titolo
@@ -657,100 +759,149 @@ export default function AdminPage() {
                   />
                 </div>
                 
-                {/* Drag and drop area */}
-                <div className="mb-6">
-                  <label className="block text-gray-700 mb-2">
-                    Immagini del Fumetto
-                  </label>
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                      isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={handleBrowseClick}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      className="hidden"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImagesChange}
-                    />
-                    <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <p className="mt-2 text-sm text-gray-600">
-                      Trascina qui le immagini o clicca per selezionarle
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      PNG, JPG, GIF fino a 10MB
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Image list for reordering */}
-                {images.length > 0 && (
+                {/* Drag and drop area - mostriamo solo se non stiamo modificando */}
+                {!isEditing && (
                   <div className="mb-6">
-                    <h3 className="text-md font-semibold mb-2">Immagini selezionate ({images.length})</h3>
-                    <p className="text-xs text-gray-500 mb-2">Trascina per riordinare</p>
-                    <ul className="space-y-2">
-                      {images.map((file, index) => (
-                        <li key={index} className="flex items-center p-2 border rounded bg-gray-50 group">
-                          <div className="flex-shrink-0 w-10 h-10 mr-3 bg-gray-200 overflow-hidden rounded">
-                            <img src={previewUrls[index]} alt="" className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex-grow truncate">
-                            {file.name}
-                            <div className="text-xs text-gray-500">
-                              {(file.size / 1024).toFixed(0)} KB
-                            </div>
-                          </div>
-                          <div className="flex-shrink-0 space-x-2">
-                            {index > 0 && (
-                              <button
-                                type="button"
-                                className="text-gray-500 hover:text-gray-700"
-                                onClick={() => moveImage(index, index - 1)}
-                                title="Sposta su"
-                              >
-                                ↑
-                              </button>
-                            )}
-                            {index < images.length - 1 && (
-                              <button
-                                type="button"
-                                className="text-gray-500 hover:text-gray-700"
-                                onClick={() => moveImage(index, index + 1)}
-                                title="Sposta giù"
-                              >
-                                ↓
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              className="text-red-500 hover:text-red-700"
-                              onClick={() => removeImage(index)}
-                              title="Rimuovi"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                    <label className="block text-gray-700 mb-2">
+                      Immagini del Fumetto
+                    </label>
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                        isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={handleBrowseClick}
+                    >
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImagesChange}
+                      />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <p className="mt-2 text-sm text-gray-600">
+                        Trascina qui le immagini o clicca per selezionarle
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        PNG, JPG, GIF fino a 10MB
+                      </p>
+                    </div>
                   </div>
                 )}
                 
-                <button
-                  type="submit"
-                  className="bg-black text-white py-2 px-6 rounded hover:bg-opacity-80 transition-all"
-                  disabled={uploading}
-                >
-                  {uploading ? 'Caricamento in corso...' : 'Pubblica Fumetto'}
-                </button>
+                {/* Image list for reordering - modificato per mostrare anche in modalità modifica */}
+                {(images.length > 0 || isEditing) && (
+                  <div className="mb-6">
+                    <h3 className="text-md font-semibold mb-2">
+                      {isEditing 
+                        ? `Immagini del fumetto (${previewUrls.length})`
+                        : `Immagini selezionate (${images.length})`
+                      }
+                    </h3>
+                    
+                    {isEditing ? (
+                      <p className="text-xs text-gray-500 mb-2">
+                        Per modificare le immagini è necessario eliminare il fumetto e crearne uno nuovo.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mb-2">Trascina per riordinare</p>
+                    )}
+                    
+                    {!isEditing && (
+                      <ul className="space-y-2">
+                        {images.map((file, index) => (
+                          <li key={index} className="flex items-center p-2 border rounded bg-gray-50 group">
+                            <div className="flex-shrink-0 w-10 h-10 mr-3 bg-gray-200 overflow-hidden rounded">
+                              <img src={previewUrls[index]} alt="" className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-grow truncate">
+                              {file.name}
+                              <div className="text-xs text-gray-500">
+                                {(file.size / 1024).toFixed(0)} KB
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0 space-x-2">
+                              {index > 0 && (
+                                <button
+                                  type="button"
+                                  className="text-gray-500 hover:text-gray-700"
+                                  onClick={() => moveImage(index, index - 1)}
+                                  title="Sposta su"
+                                >
+                                  ↑
+                                </button>
+                              )}
+                              {index < images.length - 1 && (
+                                <button
+                                  type="button"
+                                  className="text-gray-500 hover:text-gray-700"
+                                  onClick={() => moveImage(index, index + 1)}
+                                  title="Sposta giù"
+                                >
+                                  ↓
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className="text-red-500 hover:text-red-700"
+                                onClick={() => removeImage(index)}
+                                title="Rimuovi"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    
+                    {isEditing && previewUrls.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
+                        {previewUrls.map((url, index) => (
+                          <div key={index} className="border rounded overflow-hidden">
+                            <img src={url} alt="" className="w-full h-auto" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <div className="flex space-x-3">
+                  {isEditing ? (
+                    <>
+                      <button
+                        type="submit"
+                        className="bg-green-600 text-white py-2 px-6 rounded hover:bg-green-700 transition-all"
+                        disabled={uploading || loading}
+                      >
+                        {loading ? 'Salvataggio...' : 'Salva Modifiche'}
+                      </button>
+                      <button
+                        type="button"
+                        className="bg-gray-500 text-white py-2 px-6 rounded hover:bg-gray-600 transition-all"
+                        onClick={cancelEdit}
+                        disabled={uploading || loading}
+                      >
+                        Annulla
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="submit"
+                      className="bg-black text-white py-2 px-6 rounded hover:bg-opacity-80 transition-all"
+                      disabled={uploading}
+                    >
+                      {uploading ? 'Caricamento in corso...' : 'Pubblica Fumetto'}
+                    </button>
+                  )}
+                </div>
               </form>
               
               {uploading && (
@@ -862,6 +1013,13 @@ export default function AdminPage() {
                             className="text-blue-600 hover:text-blue-800"
                           >
                             Anteprima
+                          </button>
+                          
+                          <button
+                            onClick={() => startEditComic(comic)}
+                            className="text-indigo-600 hover:text-indigo-800"
+                          >
+                            Modifica
                           </button>
                           
                           <button
