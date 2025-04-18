@@ -4,9 +4,9 @@ import { ObjectId } from 'mongodb';
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import './reader.css'; // Importo un file CSS separato per gli stili
+import './reader.css';
 
-// Server component per il recupero di un fumetto specifico
+// Server component for retrieving a specific comic
 async function getComic(id: string): Promise<Comic | null> {
   try {
     const db = await getDatabase();
@@ -25,11 +25,11 @@ export default async function ComicReaderPage({ params }: { params: { id: string
   const comic = await getComic(params.id);
   
   if (!comic) {
-    // Reindirizza alla pagina 404 se il fumetto non esiste o non è pubblicato
+    // Redirect to 404 page if comic doesn't exist or isn't published
     notFound();
   }
   
-  // Ordina le immagini in base all'ordine specificato
+  // Sort images by order
   const orderedImages = [...(comic.images || [])].sort((a, b) => a.order - b.order);
   
   return (
@@ -54,11 +54,11 @@ export default async function ComicReaderPage({ params }: { params: { id: string
             />
           </Link>
           
-          <div className="w-6"></div> {/* Elemento vuoto per bilanciare il flex */}
+          <div className="w-6"></div> {/* Empty element to balance the flex */}
         </div>
       </header>
       
-      {/* Titolo e descrizione */}
+      {/* Comic title and description */}
       <div className="bg-white text-gray-800 px-4 py-6 border-b border-gray-200">
         <div className="container mx-auto">
           <h1 className="text-2xl font-bold">{comic.title}</h1>
@@ -66,7 +66,7 @@ export default async function ComicReaderPage({ params }: { params: { id: string
         </div>
       </div>
       
-      {/* Reader del fumetto */}
+      {/* Comic reader */}
       <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
         <div className="reader-container mx-auto max-w-2xl pt-8 pb-20">
           {orderedImages.map((image, index) => (

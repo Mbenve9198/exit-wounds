@@ -42,11 +42,6 @@ export default async function ComicsPage() {
       
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 flex-grow">
-        <h1 className="text-3xl font-bold mb-2 text-center">Comics</h1>
-        <p className="text-gray-600 mb-8 text-center">
-          Explore the collection of traumatic entrepreneurial adventures
-        </p>
-        
         {comics.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
