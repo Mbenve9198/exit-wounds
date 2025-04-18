@@ -24,7 +24,7 @@ export function ClientNavigationBanner() {
             onClick={() => router.push('/comics')}
             className="back-button"
           >
-            ← Torna indietro
+            ← Back
           </button>
         </div>
       )}
