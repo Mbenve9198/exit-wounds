@@ -350,10 +350,10 @@ export default function EmailEditor({ params }: EmailEditorProps) {
                       }
                     }}
                   >
-                    Inserisci {{nickname}}
+                    {'Inserisci {{nickname}}'}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Clicca sul pulsante per inserire il campo nel testo. Il campo {{nickname}} verrà sostituito con il nome di ogni utente.</p>
+                <p className="text-xs text-gray-500 mt-1">{'Clicca sul pulsante per inserire il campo nel testo. Il campo {{nickname}} verrà sostituito con il nome di ogni utente.'}</p>
               </div>
               
               <div className="mb-4">
@@ -595,4 +595,4 @@ export default function EmailEditor({ params }: EmailEditorProps) {
       </div>
     </div>
   );
-} 
+}
