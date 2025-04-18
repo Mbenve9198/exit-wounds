@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { UserService } from '@/lib/services/UserService';
-import { sendVerificationEmail } from '@/lib/email';
+import { sendVerificationEmail, sendReactivationEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -18,16 +18,13 @@ export async function POST(request: Request) {
     // Controlla se l'utente esiste già
     const existingUser = await UserService.findUserByEmail(email);
 
-    // Se esiste ed è in stato unsubscribed, riattiva l'account
+    // Se esiste ed è in stato unsubscribed, invia email di riattivazione
     if (existingUser && existingUser.unsubscribed) {
-      // Riattiva l'account (imposta unsubscribed = false)
-      await UserService.updateUnsubscribeStatus(email, false);
-      
-      // Invia email di verifica
-      await sendVerificationEmail(email, nickname);
+      // Invia email di riattivazione invece di riattivare subito
+      await sendReactivationEmail(email, nickname);
       
       return NextResponse.json(
-        { success: true, message: 'Account reactivated! Check your email for verification.' },
+        { success: true, message: 'Reactivation email sent! Check your inbox.' },
         { status: 200 }
       );
     }

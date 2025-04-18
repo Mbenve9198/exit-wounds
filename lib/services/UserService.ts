@@ -196,4 +196,20 @@ export class UserService {
       return false;
     }
   }
+
+  // Aggiorna lo stato di verifica dell'utente
+  static async updateVerificationStatus(email: string, isVerified: boolean): Promise<boolean> {
+    try {
+      const collection = await this.getCollection();
+      const result = await collection.updateOne(
+        { email },
+        { $set: { isVerified } }
+      );
+      
+      return result.modifiedCount > 0;
+    } catch (error) {
+      console.error('Error updating verification status:', error);
+      return false;
+    }
+  }
 } 

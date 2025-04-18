@@ -607,3 +607,184 @@ export async function sendApprovalEmail(email: string, nickname: string) {
     throw error;
   }
 }
+
+export async function sendReactivationEmail(email: string, nickname: string) {
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
+      to: email,
+      replyTo: 'marco.benvenuti91@gmail.com',
+      subject: 'MISSED ME? LET\'S RESTART OUR TOXIC RELATIONSHIP',
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Reactivate Your Exit Wounds Subscription</title>
+          <style>
+            /* Stili globali */
+            body, html {
+              margin: 0;
+              padding: 0;
+              font-family: 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              background-color: #f9f9f9;
+            }
+            
+            /* Container principale */
+            .container {
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 30px 20px;
+              background-color: #ffffff;
+              border: 2px solid #000;
+              border-radius: 15px;
+              box-shadow: 5px 5px 0px #000;
+            }
+            
+            /* Header */
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+              border-bottom: 2px dashed #000;
+              padding-bottom: 20px;
+            }
+            
+            /* Titoli */
+            h1 {
+              color: #000;
+              font-size: 28px;
+              margin-bottom: 20px;
+              font-weight: 800;
+              letter-spacing: -0.5px;
+            }
+            
+            /* Titolo stile marker */
+            .title-marker {
+              display: inline-block;
+              font-size: 22px;
+              font-weight: 800;
+              color: #000;
+              position: relative;
+              padding: 5px 0;
+              margin: 25px 0 15px;
+            }
+            
+            .title-marker:after {
+              content: "";
+              position: absolute;
+              left: -2px;
+              right: -2px;
+              bottom: 2px;
+              height: 15px;
+              background-color: #FFDD33;
+              z-index: -1;
+              transform: skew(-3deg);
+            }
+            
+            /* Contenuto */
+            p {
+              margin-bottom: 15px;
+              font-size: 16px;
+            }
+            
+            /* Bottone - stile 3D */
+            .action-button {
+              display: block;
+              width: 80%;
+              margin: 30px auto;
+              padding: 15px 25px;
+              background-color: #FFDD33;
+              color: #000;
+              text-decoration: none;
+              text-align: center;
+              font-weight: bold;
+              font-size: 18px;
+              border: 3px solid #000;
+              border-radius: 40px;
+              transition: all 0.2s ease;
+              box-shadow: 0 6px 0 #000;
+              position: relative;
+              top: 0;
+            }
+            
+            /* Footer */
+            .footer {
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 2px dashed #000;
+              text-align: center;
+              font-size: 14px;
+            }
+            
+            .signature {
+              font-style: italic;
+              margin-top: 15px;
+              font-weight: 600;
+            }
+            
+            /* Unsubscribe link */
+            .unsubscribe {
+              margin-top: 15px;
+              font-size: 12px;
+              color: #777;
+              text-align: center;
+            }
+            
+            .unsubscribe a {
+              color: #555;
+              text-decoration: underline;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>YOU WANT ME BACK, HUH?</h1>
+            </div>
+            
+            <p>Hey ${nickname},</p>
+            
+            <p>Looks like you missed your weekly dose of startup trauma therapy and BJJ choke metaphors. I knew you'd be back!</p>
+            
+            <p>After tapping out of my newsletter, you've decided to rejoin the circle of madness. This is the best decision you've made since deciding not to become a founder.</p>
+            
+            <div class="title-marker">CONFIRM YOU WANT BACK IN</div>
+            
+            <p>Before I start clogging your inbox with my therapeutic cartoons again, I need you to confirm that this isn't just a fleeting moment of weakness.</p>
+            
+            <p>Click the button below to verify that you willingly want to expose yourself to my weekly illustrated trauma:</p>
+            
+            <a href="https://exit-wounds.com/api/auth/reactivate?email=${encodeURIComponent(email)}" class="action-button">
+              HOOK ME UP AGAIN
+            </a>
+            
+            <p>If you don't confirm within 7 days, I'll assume you're playing hard to get, and I'll keep waiting for you. Forever.</p>
+            
+            <p>Remember, my newsletter is like BJJ: sometimes painful, occasionally uncomfortable, but weirdly addictive.</p>
+            
+            <div class="footer">
+              <div class="signature">
+                Still somewhat breathing,<br><br>
+                Marco<br>
+                Ex-founder, Eternal White Belt & Accidental AI Wrangler
+              </div>
+              
+              <div class="unsubscribe">
+                <p><small>©2025 Exit Wounds | <a href="https://exit-wounds.com/api/unsubscribe?email=${encodeURIComponent(email)}">Unsubscribe</a></small></p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Errore nell\'invio dell\'email di riattivazione:', error);
+    throw new Error(`Errore nell'invio dell'email di riattivazione: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
+  }
+}
