@@ -3,6 +3,7 @@ import { Comic } from '@/lib/models/Comic';
 import { ObjectId } from 'mongodb';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import './reader.css'; // Importo un file CSS separato per gli stili
 
 // Server component per il recupero di un fumetto specifico
 async function getComic(id: string): Promise<Comic | null> {
@@ -81,42 +82,6 @@ export default async function ComicReaderPage({ params }: { params: { id: string
           <p>© 2025 Exit Wounds</p>
         </div>
       </footer>
-      
-      {/* Stili personalizzati per supportare il pinch-to-zoom su mobile */}
-      <style jsx global>{`
-        /* Dimensione base per il container del reader */
-        .reader-container {
-          width: 100%;
-          position: relative;
-        }
-        
-        /* Stili per supportare il pinch-to-zoom */
-        .comic-page {
-          touch-action: manipulation;
-          position: relative;
-        }
-        
-        /* Stile per la scrollbar verticale */
-        .scrollbar-thin::-webkit-scrollbar {
-          width: 5px;
-        }
-        
-        .scrollbar-thumb-gray-700::-webkit-scrollbar-thumb {
-          background-color: #4B5563;
-          border-radius: 5px;
-        }
-        
-        .scrollbar-track-gray-900::-webkit-scrollbar-track {
-          background-color: #111827;
-        }
-        
-        /* Nascondi scrollbar su mobile */
-        @media (max-width: 768px) {
-          .scrollbar-thin::-webkit-scrollbar {
-            display: none;
-          }
-        }
-      `}</style>
     </div>
   );
 } 
