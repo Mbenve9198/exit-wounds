@@ -15,4 +15,6 @@ export interface User {
   lastLogin?: Date;
   resetPasswordToken?: string | null;
   resetPasswordExpires?: Date | null;
+  unsubscribed: boolean;
+  unsubscribeToken?: string;
 } 

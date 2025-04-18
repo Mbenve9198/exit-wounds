@@ -2,6 +2,7 @@ import { MongoClient, ObjectId } from 'mongodb';
 import { User } from '../models/User';
 import { getDatabase } from '../mongodb';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 export class UserService {
   private static async getCollection() {
@@ -148,5 +149,51 @@ export class UserService {
     );
 
     return result;
+  }
+
+  // Genera un token casuale per unsubscribe
+  static async generateUnsubscribeToken(email: string): Promise<string> {
+    try {
+      const collection = await this.getCollection();
+      const token = crypto.randomBytes(32).toString('hex');
+      
+      // Aggiorna il record dell'utente con il token
+      await collection.updateOne(
+        { email },
+        { $set: { unsubscribeToken: token } }
+      );
+      
+      return token;
+    } catch (error) {
+      console.error('Error generating unsubscribe token:', error);
+      throw error;
+    }
+  }
+  
+  // Trova un utente tramite il token di unsubscribe
+  static async findUserByUnsubscribeToken(token: string): Promise<User | null> {
+    try {
+      const collection = await this.getCollection();
+      return await collection.findOne({ unsubscribeToken: token });
+    } catch (error) {
+      console.error('Error finding user by unsubscribe token:', error);
+      return null;
+    }
+  }
+  
+  // Aggiorna lo stato di unsubscribe dell'utente
+  static async updateUnsubscribeStatus(email: string, unsubscribed: boolean): Promise<boolean> {
+    try {
+      const collection = await this.getCollection();
+      const result = await collection.updateOne(
+        { email },
+        { $set: { unsubscribed } }
+      );
+      
+      return result.modifiedCount > 0;
+    } catch (error) {
+      console.error('Error updating unsubscribe status:', error);
+      return false;
+    }
   }
 } 

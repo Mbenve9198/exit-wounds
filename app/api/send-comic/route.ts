@@ -82,6 +82,11 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
     : `<p>Ti è piaciuto? Fammi sapere cosa ne pensi rispondendo direttamente a questa email.</p>
        <p>Ricorda che puoi anche condividere questo contenuto con altri founder traumatizzati - la miseria ama compagnia.</p>`;
 
+  // Creiamo il link di unsubscribe
+  const unsubscribeLink = user && user.email
+    ? `https://exit-wounds.com/api/unsubscribe?email=${encodeURIComponent(user.email)}${user.unsubscribeToken ? `&token=${user.unsubscribeToken}` : ''}`
+    : 'https://exit-wounds.com/api/unsubscribe';
+
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -173,6 +178,19 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
           margin-top: 15px;
           font-weight: 600;
         }
+        
+        /* Unsubscribe link */
+        .unsubscribe {
+          margin-top: 15px;
+          font-size: 12px;
+          color: #777;
+          text-align: center;
+        }
+        
+        .unsubscribe a {
+          color: #555;
+          text-decoration: underline;
+        }
       </style>
     </head>
     <body>
@@ -203,7 +221,9 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
             Ex-founder, Eternal White Belt & Accidental AI Wrangler
           </div>
           
-          <p><small>©2025 Exit Wounds | <a href="#">Unsubscribe</a></small></p>
+          <div class="unsubscribe">
+            <p><small>©2025 Exit Wounds | <a href="${unsubscribeLink}">Unsubscribe</a></small></p>
+          </div>
         </div>
       </div>
     </body>
@@ -291,7 +311,7 @@ export async function POST(request: NextRequest) {
       errorCount = result.errorCount;
     } else {
       // Caso 2: Invio a utenti specifici o tutti gli utenti registrati
-      let usersQuery: any = { isApproved: true, isVerified: true };
+      let usersQuery: any = { isApproved: true, isVerified: true, unsubscribed: { $ne: true } };
       
       // Se stiamo inviando a utenti specifici, filtriamo per gli ID selezionati
       if (recipientType === 'specific' && selectedUsers.length > 0) {
@@ -309,12 +329,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Nessun utente trovato per l\'invio' }, { status: 404 });
       }
 
-      // Preparo l'HTML dell'email
-      const emailHTML = generateComicEmail(comic, users[0], textBefore, textAfter);
-      
       // Per ogni utente, invia l'email
       for (const user of users) {
         try {
+          // Genera un token di unsubscribe se non esiste già
+          if (!user.unsubscribeToken) {
+            try {
+              const UserService = require('@/lib/services/UserService').UserService;
+              const token = await UserService.generateUnsubscribeToken(user.email);
+              user.unsubscribeToken = token;
+            } catch (tokenError) {
+              console.error(`Errore nella generazione del token di unsubscribe per ${user.email}:`, tokenError);
+            }
+          }
+          
+          // Preparo l'HTML dell'email personalizzato per l'utente
+          const emailHTML = generateComicEmail(comic, user, textBefore, textAfter);
+          
+          // Invio l'email
           await resend.emails.send({
             from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
             to: user.email,
