@@ -1,15 +1,22 @@
 import { v2 as cloudinary } from 'cloudinary';
 
-if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-  throw new Error('Mancano le variabili di ambiente di Cloudinary');
+// Verifica se siamo in ambiente di produzione
+const isProduction = process.env.NODE_ENV === 'production';
+
+// In produzione, richiedi le variabili d'ambiente
+if (isProduction && (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET)) {
+  throw new Error('Mancano le variabili di ambiente di Cloudinary in produzione');
 }
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true
-});
+// Configura Cloudinary solo se le variabili sono disponibili
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true
+  });
+}
 
 /**
  * Carica un'immagine su Cloudinary
@@ -18,6 +25,19 @@ cloudinary.config({
  * @returns Promessa con i dettagli del file caricato
  */
 export async function uploadImageToCloudinary(fileBuffer: Buffer, fileName?: string): Promise<CloudinaryUploadResult> {
+  // Verifica se Cloudinary è configurato
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.warn('Cloudinary non configurato. Restituisco un URL di esempio.');
+    return {
+      publicId: `local-${Date.now()}`,
+      url: 'https://placehold.co/800x600?text=Immagine+Esempio',
+      format: 'jpg',
+      resourceType: 'image',
+      bytes: fileBuffer.length,
+      created: new Date()
+    };
+  }
+
   return new Promise((resolve, reject) => {
     const uploadOptions = {
       resource_type: 'image' as 'image',
@@ -61,6 +81,12 @@ export async function uploadImageToCloudinary(fileBuffer: Buffer, fileName?: str
  * @returns Promessa con il risultato dell'eliminazione
  */
 export async function deleteFromCloudinary(publicId: string, resourceType: 'image' | 'raw' = 'image'): Promise<{ result: string }> {
+  // Verifica se Cloudinary è configurato
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.warn('Cloudinary non configurato. Simulo eliminazione locale.');
+    return { result: 'ok' };
+  }
+
   return cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
 }
 

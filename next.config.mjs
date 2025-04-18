@@ -26,13 +26,7 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
-  },
-  api: {
-    bodyParser: {
-      sizeLimit: '30mb',
-    },
-    responseLimit: '30mb',
-  },
+  }
 }
 
 if (userConfig) {
