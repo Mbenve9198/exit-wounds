@@ -37,17 +37,31 @@ async function isAdmin(request: NextRequest) {
 // GET /api/admin/comics - Ottieni tutti i fumetti
 export async function GET(request: NextRequest) {
   try {
+    console.log('Richiesta GET /api/admin/comics ricevuta');
+    
     if (!(await isAdmin(request))) {
+      console.error('Accesso non autorizzato all\'API GET comics');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const db = await getDatabase();
-    const comics = await db.collection('comics').find({}).sort({ title: 1 }).toArray();
+    console.log('Connessione al database riuscita, recupero fumetti');
+    
+    const comics = await db.collection('comics').find({}).sort({ createdAt: -1 }).toArray();
+    console.log(`Trovati ${comics.length} fumetti in totale`);
+    
+    // Log di base di ogni fumetto per debug
+    comics.forEach((comic, index) => {
+      console.log(`Fumetto ${index + 1}: ID=${comic._id}, Titolo="${comic.title}", Pubblicato=${comic.published || false}`);
+    });
     
     return NextResponse.json({ comics });
   } catch (error) {
     console.error('Errore nel recupero dei fumetti:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : 'Errore sconosciuto'
+    }, { status: 500 });
   }
 }
 

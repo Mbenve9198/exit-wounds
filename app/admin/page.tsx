@@ -55,7 +55,60 @@ export default function AdminPage() {
     }
   };
 
+  useEffect(() => {
+    console.log('Inizializzazione della pagina admin...');
+    
+    const loadComics = async () => {
+      const savedApiKey = localStorage.getItem('adminApiKey');
+      console.log('API Key da localStorage:', savedApiKey ? 'Presente' : 'Assente');
+      
+      if (savedApiKey) {
+        console.log('Impostazione apiKey e autenticazione...');
+        setApiKey(savedApiKey);
+        setIsAuthenticated(true);
+        
+        try {
+          console.log('Recupero fumetti...');
+          
+          // Assicuriamoci che la chiamata di fetch non fallisca silenziosamente
+          setLoading(true);
+          const response = await fetch('/api/admin/comics', {
+            headers: {
+              'Authorization': `Bearer ${savedApiKey}`
+            }
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Errore nel recupero dei fumetti');
+          }
+          
+          const data = await response.json();
+          console.log(`Trovati ${data.comics?.length || 0} fumetti`);
+          
+          if (data.comics && Array.isArray(data.comics)) {
+            setComics(data.comics);
+          } else {
+            console.error('Risposta API non valida:', data);
+            setError('Risposta API non valida');
+          }
+        } catch (error) {
+          console.error('Errore durante il recupero iniziale dei fumetti:', error);
+          setError('Errore nel caricamento dei fumetti. Ricarica la pagina.');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        console.log('Nessuna apiKey trovata, mostra pagina di login');
+        setLoading(false);
+      }
+    };
+    
+    loadComics();
+  }, []);
+
   const fetchComics = async () => {
+    console.log('Richiesta fetchComics...');
     try {
       setLoading(true);
       const response = await fetch('/api/admin/comics', {
@@ -65,28 +118,26 @@ export default function AdminPage() {
       });
       
       if (!response.ok) {
-        throw new Error('Errore nel recupero dei fumetti');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore nel recupero dei fumetti');
       }
       
       const data = await response.json();
-      setComics(data.comics);
+      console.log(`Recuperati ${data.comics?.length || 0} fumetti`);
+      
+      if (data.comics && Array.isArray(data.comics)) {
+        setComics(data.comics);
+      } else {
+        console.error('Risposta API non valida:', data);
+        throw new Error('Risposta API non valida');
+      }
     } catch (err) {
+      console.error('Errore in fetchComics:', err);
       setError('Errore nel caricamento dei fumetti.');
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    const savedApiKey = localStorage.getItem('adminApiKey');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-      setIsAuthenticated(true);
-      fetchComics();
-    } else {
-      setLoading(false);
-    }
-  }, []);
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
