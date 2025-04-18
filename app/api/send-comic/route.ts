@@ -168,8 +168,6 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
           ${formattedTextBefore}
         </div>
         
-        <div class="title-marker">ABOUT THIS COMIC</div>
-        
         <p>${comic.description}</p>
         
         <div class="comic-container">

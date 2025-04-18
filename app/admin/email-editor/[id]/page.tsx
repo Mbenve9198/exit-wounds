@@ -395,9 +395,6 @@ export default function EmailEditor({ params }: EmailEditorProps) {
                       
                       {/* Descrizione */}
                       <div className="mb-4">
-                        <div className="font-bold py-1 px-2 bg-yellow-200 inline-block mb-2 transform -rotate-1">
-                          ABOUT THIS COMIC
-                        </div>
                         <p>{comic.description}</p>
                       </div>
                       
