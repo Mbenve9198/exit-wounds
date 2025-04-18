@@ -399,15 +399,16 @@ export default function EmailEditor({ params }: EmailEditorProps) {
                       </div>
                       
                       {/* Immagini */}
-                      <div className="space-y-4 mb-4">
+                      <div className="space-y-0">
                         {comic.images
                           .sort((a, b) => a.order - b.order)
                           .map((image, index) => (
-                            <div key={index} className="border border-gray-200 rounded overflow-hidden">
+                            <div key={index} className="w-full">
                               <img 
                                 src={image.url} 
                                 alt={`Immagine ${index + 1}`} 
-                                className="w-full h-auto"
+                                className="w-full h-auto block"
+                                style={{margin: 0, padding: 0, border: 'none'}}
                               />
                             </div>
                           ))}

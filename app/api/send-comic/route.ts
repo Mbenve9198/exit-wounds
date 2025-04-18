@@ -40,9 +40,36 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
     .sort((a, b) => a.order - b.order) // Ordiniamo per il campo order
     .map(image => `
       <div class="comic-image">
-        <img src="${image.url}" alt="Immagine di ${comic.title}" style="max-width: 100%; height: auto; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <img src="${image.url}" alt="Immagine di ${comic.title}" style="max-width: 100%; width: 100%; height: auto; display: block; margin: 0; padding: 0; border: none;">
       </div>
     `).join('');
+
+  // Stile CSS per le immagini del fumetto
+  const comicStyles = `
+    /* Fumetto contenitore */
+    .comic-container {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    }
+    
+    /* Immagini fumetto */
+    .comic-image {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    }
+    
+    .comic-image img {
+      max-width: 100%;
+      width: 100%;
+      height: auto;
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+  `;
 
   // Formattiamo il testo prima e dopo con paragrafi HTML
   const formattedTextBefore = textBefore 
@@ -130,16 +157,7 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
           font-size: 16px;
         }
         
-        /* Fumetto contenitore */
-        .comic-container {
-          margin: 30px 0;
-          text-align: center;
-        }
-        
-        /* Immagini fumetto */
-        .comic-image {
-          margin-bottom: 20px;
-        }
+        ${comicStyles}
         
         /* Footer */
         .footer {
