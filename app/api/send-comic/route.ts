@@ -10,6 +10,9 @@ if (!process.env.RESEND_API_KEY) {
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Tipi di destinatari supportati
+type RecipientType = 'all' | 'specific' | 'audience';
+
 // Funzione di autorizzazione admin
 async function isAdmin(request: NextRequest) {
   try {
@@ -31,7 +34,7 @@ async function isAdmin(request: NextRequest) {
 }
 
 // Funzione per generare l'HTML dell'email
-function generateComicEmail(comic: Comic, user: any) {
+function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAfter?: string) {
   // Generiamo l'HTML per tutte le immagini in ordine
   const imagesHTML = comic.images
     .sort((a, b) => a.order - b.order) // Ordiniamo per il campo order
@@ -40,6 +43,17 @@ function generateComicEmail(comic: Comic, user: any) {
         <img src="${image.url}" alt="Immagine di ${comic.title}" style="max-width: 100%; height: auto; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px;">
       </div>
     `).join('');
+
+  // Formattiamo il testo prima e dopo con paragrafi HTML
+  const formattedTextBefore = textBefore 
+    ? textBefore.split('\n').map(p => p ? `<p>${p}</p>` : `<br/>`).join('\n')
+    : `<p>Ciao ${user.nickname || 'lettore'},</p>
+       <p>Ecco il nuovo fumetto della tua serie preferita di fallimenti imprenditoriali e traumi da startup!</p>`;
+
+  const formattedTextAfter = textAfter
+    ? textAfter.split('\n').map(p => p ? `<p>${p}</p>` : `<br/>`).join('\n')
+    : `<p>Ti è piaciuto? Fammi sapere cosa ne pensi rispondendo direttamente a questa email.</p>
+       <p>Ricorda che puoi anche condividere questo contenuto con altri founder traumatizzati - la miseria ama compagnia.</p>`;
 
   return `
     <!DOCTYPE html>
@@ -150,9 +164,9 @@ function generateComicEmail(comic: Comic, user: any) {
           <h2>${comic.title}</h2>
         </div>
         
-        <p>Ciao ${user.nickname || 'lettore'},</p>
-        
-        <p>Ecco il nuovo fumetto della tua serie preferita di fallimenti imprenditoriali e traumi da startup!</p>
+        <div class="text-before">
+          ${formattedTextBefore}
+        </div>
         
         <div class="title-marker">ABOUT THIS COMIC</div>
         
@@ -162,9 +176,9 @@ function generateComicEmail(comic: Comic, user: any) {
           ${imagesHTML}
         </div>
         
-        <p>Ti è piaciuto? Fammi sapere cosa ne pensi rispondendo direttamente a questa email.</p>
-        
-        <p>Ricorda che puoi anche condividere questo contenuto con altri founder traumatizzati - la miseria ama compagnia.</p>
+        <div class="text-after">
+          ${formattedTextAfter}
+        </div>
         
         <div class="footer">
           <div class="signature">
@@ -181,6 +195,33 @@ function generateComicEmail(comic: Comic, user: any) {
   `;
 }
 
+// Funzione per inviare email tramite audience Resend
+async function sendToAudience(audienceId: string, emailSubject: string, emailHTML: string): Promise<{successCount: number, errorCount: number}> {
+  try {
+    // Invia email all'audience specificata usando Resend
+    const result = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
+      subject: emailSubject,
+      html: emailHTML,
+      tags: [{ name: 'category', value: 'comic' }],
+      // @ts-ignore - audience_id è supportato da Resend ma non è ancora nel tipo
+      audience_id: audienceId
+    });
+    
+    // Per le audience non abbiamo un conteggio preciso, quindi ritorniamo un valore stimato
+    return { 
+      successCount: 1, // Rappresenta l'invio all'audience
+      errorCount: 0 
+    };
+  } catch (error) {
+    console.error('Errore nell\'invio all\'audience:', error);
+    return { 
+      successCount: 0,
+      errorCount: 1 
+    };
+  }
+}
+
 // POST /api/send-comic - Invia un fumetto via email
 export async function POST(request: NextRequest) {
   try {
@@ -188,7 +229,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { comicId } = await request.json();
+    const { 
+      comicId, 
+      emailSubject, 
+      textBefore, 
+      textAfter, 
+      recipientType = 'all',
+      selectedUsers = [],
+      audienceId = null
+    } = await request.json();
     
     if (!comicId) {
       return NextResponse.json({ error: 'ID fumetto richiesto' }, { status: 400 });
@@ -208,35 +257,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Il fumetto non contiene immagini' }, { status: 400 });
     }
 
-    // Recupero tutti gli utenti approvati
-    const users = await db.collection('users').find({ 
-      isApproved: true, 
-      isVerified: true 
-    }).toArray();
+    // Oggetto email personalizzato o default
+    const subject = emailSubject || `Exit Wounds - ${comic.title}`;
     
-    if (users.length === 0) {
-      return NextResponse.json({ error: 'Nessun utente trovato per l\'invio' }, { status: 404 });
-    }
-
-    // Preparo l'HTML dell'email
-    const emailHTML = generateComicEmail(comic, users[0]);
-    
-    // Per ogni utente, invia l'email
     let successCount = 0;
     let errorCount = 0;
-    
-    for (const user of users) {
-      try {
-        await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
-          to: user.email,
-          subject: `Exit Wounds - ${comic.title}`,
-          html: emailHTML
-        });
-        successCount++;
-      } catch (error) {
-        console.error(`Errore nell'invio dell'email a ${user.email}:`, error);
-        errorCount++;
+
+    // Gestione in base al tipo di destinatario
+    if (recipientType === 'audience' && audienceId) {
+      // Caso 1: Invio a un'audience Resend
+      const dummyUser = { nickname: 'lettore' }; // Utente generico per il template
+      const emailHTML = generateComicEmail(comic, dummyUser, textBefore, textAfter);
+      
+      const result = await sendToAudience(audienceId, subject, emailHTML);
+      successCount = result.successCount;
+      errorCount = result.errorCount;
+    } else {
+      // Caso 2: Invio a utenti specifici o tutti gli utenti registrati
+      let usersQuery: any = { isApproved: true, isVerified: true };
+      
+      // Se stiamo inviando a utenti specifici, filtriamo per gli ID selezionati
+      if (recipientType === 'specific' && selectedUsers.length > 0) {
+        // Convertiamo gli ID da string a ObjectId se necessario
+        const userIds = selectedUsers.map((id: string) => 
+          typeof id === 'string' ? new ObjectId(id) : id
+        );
+        usersQuery._id = { $in: userIds };
+      }
+      
+      // Recupero gli utenti in base al filtro
+      const users = await db.collection('users').find(usersQuery).toArray();
+      
+      if (users.length === 0) {
+        return NextResponse.json({ error: 'Nessun utente trovato per l\'invio' }, { status: 404 });
+      }
+
+      // Preparo l'HTML dell'email
+      const emailHTML = generateComicEmail(comic, users[0], textBefore, textAfter);
+      
+      // Per ogni utente, invia l'email
+      for (const user of users) {
+        try {
+          await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL || 'marco@exit-wounds.com',
+            to: user.email,
+            subject: subject,
+            html: emailHTML
+          });
+          successCount++;
+        } catch (error) {
+          console.error(`Errore nell'invio dell'email a ${user.email}:`, error);
+          errorCount++;
+        }
       }
     }
     

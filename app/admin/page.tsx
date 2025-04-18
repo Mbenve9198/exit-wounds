@@ -512,40 +512,7 @@ export default function AdminPage() {
   };
 
   const sendComic = async (id: string) => {
-    if (!confirm('Sei sicuro di voler inviare questo fumetto a tutti gli utenti?')) {
-      return;
-    }
-    
-    try {
-      setIsSending(true);
-      setSendingResult(null);
-      
-      const response = await fetch('/api/send-comic', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ comicId: id })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Errore nell\'invio del fumetto');
-      }
-      
-      const result = await response.json();
-      setSendingResult({
-        success: result.successCount,
-        error: result.errorCount
-      });
-      
-      // Refresh comics list
-      fetchComics();
-    } catch (err) {
-      setError('Errore durante l\'invio del fumetto.');
-    } finally {
-      setIsSending(false);
-    }
+    router.push(`/admin/email-editor/${id}`);
   };
 
   // Funzione per avviare la modifica di un fumetto
@@ -1042,9 +1009,8 @@ export default function AdminPage() {
                             <button
                               onClick={() => sendComic(comic._id!.toString())}
                               className="text-purple-600 hover:text-purple-800"
-                              disabled={isSending}
                             >
-                              {isSending ? 'Invio...' : 'Invia Email'}
+                              Invia Email
                             </button>
                           )}
                         </div>
