@@ -3,6 +3,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Comic } from '@/lib/models/Comic';
 
+// Imposta la revalidazione a zero per evitare la cache
+export const revalidate = 0;
+
 // Server component for fetching published comics
 async function getPublishedComics(): Promise<Comic[]> {
   try {

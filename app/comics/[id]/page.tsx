@@ -7,6 +7,9 @@ import { notFound } from 'next/navigation';
 import './reader.css';
 import { ClientNavigationBanner } from './client-components';
 
+// Imposta la revalidazione a zero per evitare la cache
+export const revalidate = 0;
+
 // Server component for retrieving a specific comic
 async function getComic(id: string): Promise<Comic | null> {
   try {
