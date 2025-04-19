@@ -235,6 +235,113 @@ export default function EmailEditor({ params }: EmailEditorProps) {
     ));
   };
 
+  // Questa nuova funzione renderà l'anteprima più simile all'email reale
+  const renderEmailPreview = () => {
+    if (!comic) return null;
+
+    // Ordina le immagini per il campo order
+    const orderedImages = [...comic.images].sort((a, b) => a.order - b.order);
+
+    return (
+      <div className="bg-white h-full overflow-y-auto" style={{fontFamily: 'Helvetica Neue, Arial, sans-serif', lineHeight: 1.6, color: '#333'}}>
+        {/* Header con bordo */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '30px',
+          paddingBottom: '20px',
+          maxWidth: '100%'
+        }}>
+          <div style={{
+            fontSize: '22px',
+            fontWeight: 800,
+            textAlign: 'center',
+            marginBottom: '10px'
+          }}>
+            EXIT WOUNDS
+          </div>
+          {showTitle && (
+            <h2 style={{
+              color: '#000',
+              fontSize: '18px',
+              marginBottom: '20px',
+              fontWeight: 800,
+              letterSpacing: '-0.5px',
+              textAlign: 'center'
+            }}>
+              {comic.title}
+            </h2>
+          )}
+        </div>
+        
+        {/* Testo prima delle immagini */}
+        <div style={{padding: '0 15px'}}>
+          {formatTextToParagraphs(textBefore)}
+        </div>
+        
+        {/* Descrizione */}
+        {comic.description && (
+          <p style={{padding: '0 15px', marginBottom: '15px'}}>{comic.description}</p>
+        )}
+        
+        {/* Immagini del fumetto */}
+        <div style={{margin: 0, padding: 0, width: '100%'}}>
+          {orderedImages.map((image, index) => (
+            <div key={index} style={{margin: 0, padding: 0, width: '100%'}}>
+              <img 
+                src={image.url} 
+                alt={`Immagine ${index + 1}`}
+                style={{
+                  maxWidth: '100%',
+                  width: '100%',
+                  height: 'auto',
+                  display: 'block',
+                  margin: 0,
+                  padding: 0,
+                  border: 'none'
+                }}
+              />
+            </div>
+          ))}
+        </div>
+        
+        {/* Testo dopo le immagini */}
+        <div style={{padding: '15px'}}>
+          {formatTextToParagraphs(textAfter)}
+        </div>
+        
+        {/* Footer */}
+        <div style={{
+          marginTop: '30px',
+          paddingTop: '20px',
+          borderTop: '1px solid #eee',
+          textAlign: 'center',
+          fontSize: '14px',
+          padding: '0 15px'
+        }}>
+          <div style={{
+            fontStyle: 'italic',
+            marginTop: '15px',
+            fontWeight: 600,
+            fontSize: '13px'
+          }}>
+            Still somewhat breathing,<br /><br />
+            Marco<br />
+            Ex-founder, Eternal White Belt & Accidental AI Wrangler
+          </div>
+          
+          <div style={{
+            marginTop: '15px',
+            fontSize: '12px',
+            color: '#777',
+            textAlign: 'center'
+          }}>
+            <p><small>©2025 Exit Wounds | <a href="#" style={{color: '#555', textDecoration: 'underline'}}>Unsubscribe</a></small></p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -431,57 +538,9 @@ export default function EmailEditor({ params }: EmailEditorProps) {
                 <div className="absolute top-0 inset-x-0 h-6 bg-black z-10"></div>
                 <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-16 h-4 bg-black rounded-b-lg z-20"></div>
                 
-                {/* Mobile screen */}
-                <div className="w-full h-full bg-white overflow-y-auto pt-8">
-                  <div className="p-4">
-                    <div className="text-center mb-4">
-                      <h1 className="text-xl font-bold">EXIT WOUNDS</h1>
-                      {showTitle && <h2 className="text-lg font-semibold">{comic.title}</h2>}
-                    </div>
-                    
-                    <div className="space-y-2 text-sm">
-                      {/* Testo prima delle immagini */}
-                      <div className="mb-4">
-                        {formatTextToParagraphs(textBefore)}
-                      </div>
-                      
-                      {/* Descrizione */}
-                      <div className="mb-4">
-                        <p>{comic.description}</p>
-                      </div>
-                      
-                      {/* Immagini */}
-                      <div className="space-y-0">
-                        {comic.images
-                          .sort((a, b) => a.order - b.order)
-                          .map((image, index) => (
-                            <div key={index} className="w-full">
-                              <img 
-                                src={image.url} 
-                                alt={`Immagine ${index + 1}`} 
-                                className="w-full h-auto block"
-                                style={{margin: 0, padding: 0, border: 'none'}}
-                              />
-                            </div>
-                          ))}
-                      </div>
-                      
-                      {/* Testo dopo le immagini */}
-                      <div className="mb-4">
-                        {formatTextToParagraphs(textAfter)}
-                      </div>
-                      
-                      {/* Footer */}
-                      <div className="border-t border-gray-200 pt-4 mt-6 text-center text-xs">
-                        <div className="italic font-semibold mb-2">
-                          Still somewhat breathing,<br /><br />
-                          Marco<br />
-                          Ex-founder, Eternal White Belt & Accidental AI Wrangler
-                        </div>
-                        <p>©2025 Exit Wounds | <a href="#" className="text-blue-500">Unsubscribe</a></p>
-                      </div>
-                    </div>
-                  </div>
+                {/* Mobile screen - Sostituiamo con il nuovo rendering */}
+                <div className="w-full h-full bg-white overflow-y-auto pt-6">
+                  {renderEmailPreview()}
                 </div>
               </div>
             </div>
