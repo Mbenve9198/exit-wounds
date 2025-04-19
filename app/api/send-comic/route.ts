@@ -34,7 +34,7 @@ async function isAdmin(request: NextRequest) {
 }
 
 // Funzione per generare l'HTML dell'email
-function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAfter?: string) {
+function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAfter?: string, showTitle = true) {
   // Generiamo l'HTML per tutte le immagini in ordine
   const imagesHTML = comic.images
     .sort((a, b) => a.order - b.order) // Ordiniamo per il campo order
@@ -100,6 +100,9 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
     ? `https://exit-wounds.com/api/unsubscribe?email=${encodeURIComponent(user.email)}${user.unsubscribeToken ? `&token=${user.unsubscribeToken}` : ''}`
     : 'https://exit-wounds.com/api/unsubscribe';
 
+  // URL base per le immagini (da sostituire con l'URL del tuo sito)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://exit-wounds.com';
+
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -133,17 +136,23 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
         .header {
           text-align: center;
           margin-bottom: 30px;
-          border-bottom: 2px dashed #000;
           padding-bottom: 20px;
         }
         
+        .header img {
+          max-width: 100%;
+          height: auto;
+          margin-bottom: 15px;
+        }
+        
         /* Titoli */
-        h1 {
+        h2 {
           color: #000;
-          font-size: 28px;
+          font-size: 24px;
           margin-bottom: 20px;
           font-weight: 800;
           letter-spacing: -0.5px;
+          text-align: center;
         }
         
         /* Titolo stile marker */
@@ -181,7 +190,7 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
         .footer {
           margin-top: 30px;
           padding-top: 20px;
-          border-top: 2px dashed #000;
+          border-top: 1px solid #eee;
           text-align: center;
           font-size: 14px;
         }
@@ -209,8 +218,8 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
     <body>
       <div class="container">
         <div class="header">
-          <h1>EXIT WOUNDS</h1>
-          <h2>${comic.title}</h2>
+          <img src="${baseUrl}/images/header_comics.png" alt="Exit Wounds" />
+          ${showTitle ? `<h2>${comic.title}</h2>` : ''}
         </div>
         
         <div class="text-before">
@@ -284,6 +293,7 @@ export async function POST(request: NextRequest) {
       emailSubject, 
       textBefore, 
       textAfter, 
+      showTitle = true,
       recipientType = 'all',
       selectedUsers = [],
       audienceId = null
@@ -317,7 +327,7 @@ export async function POST(request: NextRequest) {
     if (recipientType === 'audience' && audienceId) {
       // Caso 1: Invio a un'audience Resend
       const dummyUser = { nickname: 'lettore' }; // Utente generico per il template
-      const emailHTML = generateComicEmail(comic, dummyUser, textBefore, textAfter);
+      const emailHTML = generateComicEmail(comic, dummyUser, textBefore, textAfter, showTitle);
       
       const result = await sendToAudience(audienceId, subject, emailHTML);
       successCount = result.successCount;
@@ -357,7 +367,7 @@ export async function POST(request: NextRequest) {
           }
           
           // Preparo l'HTML dell'email personalizzato per l'utente
-          const emailHTML = generateComicEmail(comic, user, textBefore, textAfter);
+          const emailHTML = generateComicEmail(comic, user, textBefore, textAfter, showTitle);
           
           // Invio l'email
           await resend.emails.send({

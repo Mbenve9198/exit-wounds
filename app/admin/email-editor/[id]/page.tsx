@@ -37,6 +37,7 @@ export default function EmailEditor({ params }: EmailEditorProps) {
   const [emailSubject, setEmailSubject] = useState('');
   const [textBefore, setTextBefore] = useState('');
   const [textAfter, setTextAfter] = useState('');
+  const [showTitle, setShowTitle] = useState(true);
   
   // Gestione dei destinatari
   const [recipientType, setRecipientType] = useState<RecipientType>('all');
@@ -188,6 +189,7 @@ export default function EmailEditor({ params }: EmailEditorProps) {
           emailSubject,
           textBefore,
           textAfter,
+          showTitle,
           recipientType,
           selectedUsers: recipientType === 'specific' ? selectedUsers : [],
           audienceId: recipientType === 'audience' ? '2ae0ef0c-c5d8-45db-a3cb-6f4032647ec9' : null
@@ -321,6 +323,18 @@ export default function EmailEditor({ params }: EmailEditorProps) {
                 />
               </div>
               
+              <div className="mb-4">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={showTitle}
+                    onChange={(e) => setShowTitle(e.target.checked)}
+                    className="h-4 w-4 text-black border-gray-300 rounded"
+                  />
+                  <span className="text-gray-700">Mostra titolo del fumetto nell'email</span>
+                </label>
+              </div>
+              
               <div className="mb-2 bg-yellow-50 p-3 rounded-md border border-yellow-200">
                 <p className="text-sm text-gray-700 mb-1 font-medium">Campi dinamici disponibili:</p>
                 <div className="flex flex-wrap gap-2">
@@ -422,7 +436,7 @@ export default function EmailEditor({ params }: EmailEditorProps) {
                   <div className="p-4">
                     <div className="text-center mb-4">
                       <h1 className="text-xl font-bold">EXIT WOUNDS</h1>
-                      <h2 className="text-lg font-semibold">{comic.title}</h2>
+                      {showTitle && <h2 className="text-lg font-semibold">{comic.title}</h2>}
                     </div>
                     
                     <div className="space-y-2 text-sm">
