@@ -231,7 +231,7 @@ export default function EmailEditor({ params }: EmailEditorProps) {
     const processed = text.replace(/\{\{nickname\}\}/g, "Nome Utente");
     
     return processed.split('\n').map((paragraph, index) => (
-      paragraph ? <p key={index} style={{marginBottom: '15px'}}>{paragraph}</p> : <br key={index} />
+      paragraph ? <p key={index} style={{marginBottom: '8px'}}>{paragraph}</p> : <br key={index} />
     ));
   };
 
@@ -243,12 +243,12 @@ export default function EmailEditor({ params }: EmailEditorProps) {
     const orderedImages = [...comic.images].sort((a, b) => a.order - b.order);
 
     return (
-      <div className="bg-white h-full overflow-y-auto" style={{fontFamily: 'Helvetica Neue, Arial, sans-serif', lineHeight: 1.6, color: '#333'}}>
+      <div className="bg-white h-full overflow-y-auto" style={{fontFamily: 'Helvetica Neue, Arial, sans-serif', lineHeight: 1.4, color: '#333'}}>
         {/* Header con bordo */}
         <div style={{
           textAlign: 'center',
-          marginBottom: '30px',
-          paddingBottom: '20px',
+          marginBottom: '20px',
+          paddingBottom: '15px',
           maxWidth: '100%'
         }}>
           <div style={{
@@ -263,7 +263,7 @@ export default function EmailEditor({ params }: EmailEditorProps) {
             <h2 style={{
               color: '#000',
               fontSize: '18px',
-              marginBottom: '20px',
+              marginBottom: '15px',
               fontWeight: 800,
               letterSpacing: '-0.5px',
               textAlign: 'center'
@@ -280,7 +280,7 @@ export default function EmailEditor({ params }: EmailEditorProps) {
         
         {/* Descrizione */}
         {comic.description && (
-          <p style={{padding: '0 15px', marginBottom: '15px'}}>{comic.description}</p>
+          <p style={{padding: '0 15px', marginBottom: '12px'}}>{comic.description}</p>
         )}
         
         {/* Immagini del fumetto */}
@@ -311,8 +311,8 @@ export default function EmailEditor({ params }: EmailEditorProps) {
         
         {/* Footer */}
         <div style={{
-          marginTop: '30px',
-          paddingTop: '20px',
+          marginTop: '20px',
+          paddingTop: '15px',
           borderTop: '1px solid #eee',
           textAlign: 'center',
           fontSize: '14px',
@@ -320,7 +320,7 @@ export default function EmailEditor({ params }: EmailEditorProps) {
         }}>
           <div style={{
             fontStyle: 'italic',
-            marginTop: '15px',
+            marginTop: '10px',
             fontWeight: 600,
             fontSize: '13px'
           }}>

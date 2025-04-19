@@ -88,11 +88,11 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
 
   // Usiamo i testi forniti dall'utente o i default, e processiamo i placeholder
   const processedTextBefore = textBefore 
-    ? processTemplate(textBefore).split('\n').map(p => p ? `<p>${p}</p>` : `<br/>`).join('\n')
+    ? processTemplate(textBefore).split('\n').map(p => p ? `<p style="margin-bottom: 8px;">${p}</p>` : `<br/>`).join('\n')
     : defaultTextBefore;
 
   const processedTextAfter = textAfter
-    ? processTemplate(textAfter).split('\n').map(p => p ? `<p>${p}</p>` : `<br/>`).join('\n')
+    ? processTemplate(textAfter).split('\n').map(p => p ? `<p style="margin-bottom: 8px;">${p}</p>` : `<br/>`).join('\n')
     : defaultTextAfter;
 
   // Creiamo il link di unsubscribe
@@ -180,7 +180,7 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
         
         /* Contenuto */
         p {
-          margin-bottom: 15px;
+          margin-bottom: 8px;
           font-size: 16px;
         }
         
