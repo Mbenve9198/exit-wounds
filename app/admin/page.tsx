@@ -328,8 +328,8 @@ export default function AdminPage() {
     setFormError('');
     
     // Validate form
-    if (!title.trim() || !description.trim() || images.length === 0) {
-      setFormError('Titolo, descrizione e almeno un\'immagine sono obbligatori');
+    if (!title.trim() || images.length === 0) {
+      setFormError('Titolo e almeno un\'immagine sono obbligatori');
       return;
     }
     

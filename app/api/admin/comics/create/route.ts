@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
     // Leggiamo i dati JSON
     const { title, description, images } = await request.json();
     
-    if (!title || !description || !images || !Array.isArray(images) || images.length === 0) {
+    if (!title || !images || !Array.isArray(images) || images.length === 0) {
       return NextResponse.json({ 
-        error: 'Titolo, descrizione e almeno un\'immagine sono richiesti' 
+        error: 'Titolo e almeno un\'immagine sono richiesti' 
       }, { status: 400 });
     }
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     // Creiamo l'oggetto fumetto
     const comic: Omit<Comic, '_id'> = {
       title,
-      description,
+      description: description || '',
       images: images as ImageInfo[],
       createdAt: new Date(),
       updatedAt: new Date(),
