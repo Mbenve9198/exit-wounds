@@ -266,12 +266,12 @@ export default function EmailEditor({ params }: EmailEditorProps) {
           {/* Header con bordo e immagine */}
           <div style={{
             textAlign: 'center',
-            marginBottom: '20px',
-            paddingBottom: '15px',
+            marginBottom: '10px',
+            paddingBottom: '10px',
           }}>
             {/* Utilizziamo l'immagine dell'header come nell'email reale */}
             <div style={{
-              marginBottom: '15px'
+              marginBottom: '8px'
             }}>
               <img src="/images/header_comics.png" alt="Exit Wounds" style={{
                 maxWidth: '100%',
@@ -284,7 +284,7 @@ export default function EmailEditor({ params }: EmailEditorProps) {
               <h2 style={{
                 color: '#000',
                 fontSize: '18px',
-                marginBottom: '15px',
+                marginBottom: '5px',
                 fontWeight: 800,
                 letterSpacing: '-0.5px',
                 textAlign: 'center'

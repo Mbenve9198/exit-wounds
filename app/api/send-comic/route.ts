@@ -135,21 +135,21 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
         /* Header */
         .header {
           text-align: center;
-          margin-bottom: 30px;
-          padding-bottom: 20px;
+          margin-bottom: 15px;
+          padding-bottom: 10px;
         }
         
         .header img {
           max-width: 100%;
           height: auto;
-          margin-bottom: 15px;
+          margin-bottom: 8px;
         }
         
         /* Titoli */
         h2 {
           color: #000;
           font-size: 24px;
-          margin-bottom: 20px;
+          margin-bottom: 10px;
           font-weight: 800;
           letter-spacing: -0.5px;
           text-align: center;
