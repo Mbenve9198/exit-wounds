@@ -226,8 +226,6 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
           ${processedTextBefore}
         </div>
         
-        <p>${comic.description}</p>
-        
         <div class="comic-container">
           ${imagesHTML}
         </div>

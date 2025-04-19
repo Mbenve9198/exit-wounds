@@ -299,11 +299,6 @@ export default function EmailEditor({ params }: EmailEditorProps) {
             {formatTextToParagraphs(textBefore)}
           </div>
           
-          {/* Descrizione */}
-          {comic.description && (
-            <p style={{marginBottom: '12px'}}>{comic.description}</p>
-          )}
-          
           {/* Immagini del fumetto */}
           <div style={{margin: 0, padding: 0, width: '100%'}}>
             {orderedImages.map((image, index) => (
@@ -488,7 +483,18 @@ export default function EmailEditor({ params }: EmailEditorProps) {
                         setTimeout(() => {
                           activeElement.focus();
                           activeElement.setSelectionRange(cursorPosition + 12, cursorPosition + 12);
-                        }, 0);
+                        }, 10);
+                      } else {
+                        // Se nessun campo di testo è attivo, aggiungiamo il tag al campo "Testo Prima delle Immagini"
+                        setTextBefore(textBefore + '{{nickname}}');
+                        // Focalizziamo il campo di testo
+                        const textBeforeElement = document.getElementById('textBefore') as HTMLTextAreaElement;
+                        if (textBeforeElement) {
+                          setTimeout(() => {
+                            textBeforeElement.focus();
+                            textBeforeElement.setSelectionRange(textBefore.length + 12, textBefore.length + 12);
+                          }, 10);
+                        }
                       }
                     }}
                   >
