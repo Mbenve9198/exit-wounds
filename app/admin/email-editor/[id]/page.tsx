@@ -242,100 +242,121 @@ export default function EmailEditor({ params }: EmailEditorProps) {
     // Ordina le immagini per il campo order
     const orderedImages = [...comic.images].sort((a, b) => a.order - b.order);
 
+    // Base URL per le immagini statiche
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+
     return (
-      <div className="bg-white h-full overflow-y-auto" style={{fontFamily: 'Helvetica Neue, Arial, sans-serif', lineHeight: 1.4, color: '#333'}}>
-        {/* Header con bordo */}
+      <div className="bg-white h-full overflow-y-auto" style={{
+        fontFamily: 'Helvetica Neue, Arial, sans-serif', 
+        lineHeight: 1.4, 
+        color: '#333',
+        backgroundColor: '#f9f9f9', 
+        height: '100%'
+      }}>
+        {/* Container principale con bordo e ombra come nell'email reale */}
         <div style={{
-          textAlign: 'center',
-          marginBottom: '20px',
-          paddingBottom: '15px',
-          maxWidth: '100%'
+          maxWidth: '100%',
+          margin: '0 5px',
+          padding: '15px 10px',
+          backgroundColor: '#ffffff',
+          border: '2px solid #000',
+          borderRadius: '15px',
+          boxShadow: '4px 4px 0px #000'
         }}>
+          {/* Header con bordo e immagine */}
           <div style={{
-            fontSize: '22px',
-            fontWeight: 800,
             textAlign: 'center',
-            marginBottom: '10px'
+            marginBottom: '20px',
+            paddingBottom: '15px',
           }}>
-            EXIT WOUNDS
-          </div>
-          {showTitle && (
-            <h2 style={{
-              color: '#000',
-              fontSize: '18px',
-              marginBottom: '15px',
-              fontWeight: 800,
-              letterSpacing: '-0.5px',
-              textAlign: 'center'
+            {/* Utilizziamo l'immagine dell'header come nell'email reale */}
+            <div style={{
+              marginBottom: '15px'
             }}>
-              {comic.title}
-            </h2>
-          )}
-        </div>
-        
-        {/* Testo prima delle immagini */}
-        <div style={{padding: '0 15px'}}>
-          {formatTextToParagraphs(textBefore)}
-        </div>
-        
-        {/* Descrizione */}
-        {comic.description && (
-          <p style={{padding: '0 15px', marginBottom: '12px'}}>{comic.description}</p>
-        )}
-        
-        {/* Immagini del fumetto */}
-        <div style={{margin: 0, padding: 0, width: '100%'}}>
-          {orderedImages.map((image, index) => (
-            <div key={index} style={{margin: 0, padding: 0, width: '100%'}}>
-              <img 
-                src={image.url} 
-                alt={`Immagine ${index + 1}`}
-                style={{
-                  maxWidth: '100%',
-                  width: '100%',
-                  height: 'auto',
-                  display: 'block',
-                  margin: 0,
-                  padding: 0,
-                  border: 'none'
-                }}
-              />
+              <img src="/images/header_comics.png" alt="Exit Wounds" style={{
+                maxWidth: '100%',
+                height: 'auto',
+                margin: '0 auto'
+              }} />
             </div>
-          ))}
-        </div>
-        
-        {/* Testo dopo le immagini */}
-        <div style={{padding: '15px'}}>
-          {formatTextToParagraphs(textAfter)}
-        </div>
-        
-        {/* Footer */}
-        <div style={{
-          marginTop: '20px',
-          paddingTop: '15px',
-          borderTop: '1px solid #eee',
-          textAlign: 'center',
-          fontSize: '14px',
-          padding: '0 15px'
-        }}>
-          <div style={{
-            fontStyle: 'italic',
-            marginTop: '10px',
-            fontWeight: 600,
-            fontSize: '13px'
-          }}>
-            Still somewhat breathing,<br /><br />
-            Marco<br />
-            Ex-founder, Eternal White Belt & Accidental AI Wrangler
+            
+            {showTitle && (
+              <h2 style={{
+                color: '#000',
+                fontSize: '18px',
+                marginBottom: '15px',
+                fontWeight: 800,
+                letterSpacing: '-0.5px',
+                textAlign: 'center'
+              }}>
+                {comic.title}
+              </h2>
+            )}
           </div>
           
+          {/* Testo prima delle immagini */}
+          <div style={{padding: '0'}}>
+            {formatTextToParagraphs(textBefore)}
+          </div>
+          
+          {/* Descrizione */}
+          {comic.description && (
+            <p style={{marginBottom: '12px'}}>{comic.description}</p>
+          )}
+          
+          {/* Immagini del fumetto */}
+          <div style={{margin: 0, padding: 0, width: '100%'}}>
+            {orderedImages.map((image, index) => (
+              <div key={index} style={{margin: 0, padding: 0, width: '100%'}}>
+                <img 
+                  src={image.url} 
+                  alt={`Immagine ${index + 1}`}
+                  style={{
+                    maxWidth: '100%',
+                    width: '100%',
+                    height: 'auto',
+                    display: 'block',
+                    margin: 0,
+                    padding: 0,
+                    border: 'none'
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          
+          {/* Testo dopo le immagini */}
+          <div style={{padding: '0'}}>
+            {formatTextToParagraphs(textAfter)}
+          </div>
+          
+          {/* Footer */}
           <div style={{
-            marginTop: '15px',
-            fontSize: '12px',
-            color: '#777',
-            textAlign: 'center'
+            marginTop: '20px',
+            paddingTop: '15px',
+            borderTop: '1px solid #eee',
+            textAlign: 'center',
+            fontSize: '14px'
           }}>
-            <p><small>©2025 Exit Wounds | <a href="#" style={{color: '#555', textDecoration: 'underline'}}>Unsubscribe</a></small></p>
+            <div style={{
+              fontStyle: 'italic',
+              marginTop: '10px',
+              fontWeight: 600,
+              fontSize: '13px'
+            }}>
+              Still somewhat breathing,<br /><br />
+              Marco<br />
+              Ex-founder, Eternal White Belt & Accidental AI Wrangler
+            </div>
+            
+            <div style={{
+              marginTop: '15px',
+              fontSize: '12px',
+              color: '#777',
+              textAlign: 'center'
+            }}>
+              <p><small>©2025 Exit Wounds | <a href="#" style={{color: '#555', textDecoration: 'underline'}}>Unsubscribe</a></small></p>
+            </div>
           </div>
         </div>
       </div>
