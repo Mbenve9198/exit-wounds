@@ -39,36 +39,48 @@ function ComicsPageContent() {
     // Check URL parameters
     const showLogin = searchParams.get('showLogin');
     if (showLogin === 'true') {
-      setShowLoginModal(true);
+      // Verifica se l'utente è già loggato prima di mostrare la modal
+      checkLoginStatus().then(isUserLoggedIn => {
+        if (!isUserLoggedIn) {
+          setShowLoginModal(true);
+        }
+      });
+    } else {
+      // Se non c'è il parametro, controlla comunque lo stato di login
+      checkLoginStatus();
     }
     
-    // Check if user is logged in
-    const checkLoginStatus = async () => {
-      try {
-        const response = await fetch('/api/auth/check', {
-          method: 'GET',
-          cache: 'no-store'
-        });
-        
-        if (response.ok) {
-          setIsLoggedIn(true);
-        }
-      } catch (error) {
-        console.error('Error checking login status:', error);
-      }
-    };
-    
     // Fetch comics
-    const fetchComics = async () => {
-      setLoading(true);
-      const fetchedComics = await getPublishedComics();
-      setComics(fetchedComics);
-      setLoading(false);
-    };
-    
-    checkLoginStatus();
     fetchComics();
   }, [searchParams]);
+  
+  // Check if user is logged in
+  const checkLoginStatus = async () => {
+    try {
+      const response = await fetch('/api/auth/check', {
+        method: 'GET',
+        cache: 'no-store'
+      });
+      
+      if (response.ok) {
+        setIsLoggedIn(true);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error checking login status:', error);
+      return false;
+    }
+  };
+  
+  // Fetch comics
+  const fetchComics = async () => {
+    setLoading(true);
+    const fetchedComics = await getPublishedComics();
+    setComics(fetchedComics);
+    setLoading(false);
+  };
   
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
