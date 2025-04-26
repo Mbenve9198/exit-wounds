@@ -93,7 +93,7 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
               text-align: center;
             ">
               <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://exit-wounds.com'}/comics/${comic._id?.toString()}" style="color: white; text-decoration: underline;">
-                Sblocca censura
+                Unlock censored content
               </a>
             </div>
           </div>
