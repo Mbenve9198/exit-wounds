@@ -1,29 +1,94 @@
-import { getDatabase } from '@/lib/mongodb';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Comic } from '@/lib/models/Comic';
+import LoginModal from './components/LoginModal';
 
-// Imposta la revalidazione a zero per evitare la cache
-export const revalidate = 0;
+// Set revalidate to 0 to avoid caching
+export const dynamic = 'force-dynamic';
 
-// Server component for fetching published comics
 async function getPublishedComics(): Promise<Comic[]> {
   try {
-    const db = await getDatabase();
-    const comics = await db.collection('comics')
-      .find({ published: true })
-      .sort({ createdAt: -1 })
-      .toArray() as unknown as Comic[];
-    
-    return comics;
+    const response = await fetch('/api/comics', { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error('Failed to fetch comics');
+    }
+    const data = await response.json();
+    return data.comics || [];
   } catch (error) {
     console.error('Error retrieving comics:', error);
     return [];
   }
 }
 
-export default async function ComicsPage() {
-  const comics = await getPublishedComics();
+export default function ComicsPage() {
+  const [comics, setComics] = useState<Comic[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  const searchParams = useSearchParams();
+  
+  useEffect(() => {
+    // Check URL parameters
+    const showLogin = searchParams.get('showLogin');
+    if (showLogin === 'true') {
+      setShowLoginModal(true);
+    }
+    
+    // Check if user is logged in
+    const checkLoginStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          method: 'GET',
+          cache: 'no-store'
+        });
+        
+        if (response.ok) {
+          setIsLoggedIn(true);
+        }
+      } catch (error) {
+        console.error('Error checking login status:', error);
+      }
+    };
+    
+    // Fetch comics
+    const fetchComics = async () => {
+      setLoading(true);
+      const fetchedComics = await getPublishedComics();
+      setComics(fetchedComics);
+      setLoading(false);
+    };
+    
+    checkLoginStatus();
+    fetchComics();
+  }, [searchParams]);
+  
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+    setShowLoginModal(false);
+    // Reload the page to apply authentication
+    window.location.reload();
+  };
+  
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        setIsLoggedIn(false);
+        // Reload the page to apply logout
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
   
   return (
     <div className="bg-white min-h-screen flex flex-col">
@@ -40,12 +105,35 @@ export default async function ComicsPage() {
               priority
             />
           </Link>
+          
+          {/* Login/Logout button */}
+          <div className="mt-4">
+            {isLoggedIn ? (
+              <button
+                onClick={handleLogout}
+                className="text-sm px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded"
+              >
+                Logout
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className="text-sm px-4 py-2 bg-black text-white hover:bg-gray-800 rounded"
+              >
+                Login
+              </button>
+            )}
+          </div>
         </div>
       </header>
       
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 flex-grow">
-        {comics.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <p className="text-gray-500">Loading comics...</p>
+          </div>
+        ) : comics.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -100,6 +188,13 @@ export default async function ComicsPage() {
           </p>
         </div>
       </footer>
+      
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleLoginSuccess}
+      />
     </div>
   );
 } 
