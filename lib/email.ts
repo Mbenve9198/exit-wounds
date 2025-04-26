@@ -791,7 +791,7 @@ export async function sendReactivationEmail(email: string, nickname: string) {
 
 // Funzione per inviare email di reset password
 export async function sendResetPasswordEmail(email: string, nickname: string, token: string) {
-  const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
   
   try {
     console.log('Sending reset password email to:', email, 'with token:', token);
@@ -902,7 +902,7 @@ export async function sendResetPasswordEmail(email: string, nickname: string, to
         <body>
           <div class="container">
             <div class="header">
-              <img src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/images/header_comics.png" alt="Exit Wounds">
+              <img src="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/images/header_comics.png" alt="Exit Wounds">
               <h1>Password Reset Request</h1>
             </div>
             
@@ -925,7 +925,7 @@ export async function sendResetPasswordEmail(email: string, nickname: string, to
             </div>
             
             <div class="footer">
-              <p>©2025 Exit Wounds | <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/unsubscribe?email=${encodeURIComponent(email)}">Unsubscribe</a></p>
+              <p>©2025 Exit Wounds | <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/unsubscribe?email=${encodeURIComponent(email)}">Unsubscribe</a></p>
             </div>
           </div>
         </body>
