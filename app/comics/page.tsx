@@ -112,14 +112,14 @@ function ComicsPageContent() {
             {isLoggedIn ? (
               <button
                 onClick={handleLogout}
-                className="text-sm px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded"
+                className="text-sm px-4 py-2 bg-[#FFDD33] text-black font-medium rounded-full text-center transition-all duration-200 border-2 border-black hover:shadow-[0_4px_0_0_rgba(0,0,0,1)] hover:translate-y-[-4px]"
               >
                 Logout
               </button>
             ) : (
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="text-sm px-4 py-2 bg-black text-white hover:bg-gray-800 rounded"
+                className="text-sm px-4 py-2 bg-[#FFDD33] text-black font-medium rounded-full text-center transition-all duration-200 border-2 border-black hover:shadow-[0_4px_0_0_rgba(0,0,0,1)] hover:translate-y-[-4px]"
               >
                 Login
               </button>

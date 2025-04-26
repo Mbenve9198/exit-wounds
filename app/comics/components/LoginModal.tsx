@@ -86,7 +86,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
               </p>
               <Link 
                 href="/"
-                className="block w-full py-2 px-4 bg-black text-white text-center rounded hover:bg-gray-900"
+                className="block w-full py-3 px-6 bg-[#FFDD33] text-black font-medium rounded-full text-center transition-all duration-200 border-2 border-black hover:shadow-[0_4px_0_0_rgba(0,0,0,1)] hover:translate-y-[-4px]"
               >
                 Go to Registration
               </Link>
@@ -134,9 +134,9 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full py-2 px-4 rounded ${
-                    isLoading ? 'bg-gray-400' : 'bg-black hover:bg-gray-900'
-                  } text-white font-medium`}
+                  className={`w-full py-3 px-6 bg-[#FFDD33] text-black font-medium rounded-full text-center transition-all duration-200 border-2 border-black hover:shadow-[0_4px_0_0_rgba(0,0,0,1)] hover:translate-y-[-4px] ${
+                    isLoading ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
                 >
                   {isLoading ? 'Logging in...' : 'Login'}
                 </button>
