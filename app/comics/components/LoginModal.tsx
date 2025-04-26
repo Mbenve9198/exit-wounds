@@ -141,6 +141,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
                   {isLoading ? 'Logging in...' : 'Login'}
                 </button>
                 
+                <div className="text-center text-sm text-gray-500">
+                  <Link href="/forgot-password" className="text-blue-600 hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
+                
                 <p className="text-center text-sm text-gray-500">
                   Don't have an account?{' '}
                   <button 
