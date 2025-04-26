@@ -120,7 +120,7 @@ function ResetPasswordContent() {
               
               <Link 
                 href="/comics" 
-                className="inline-block bg-black text-white px-6 py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors"
+                className="inline-block py-3 px-6 bg-[#FFDD33] text-black font-medium rounded-full text-center transition-all duration-200 border-2 border-black hover:shadow-[0_4px_0_0_rgba(0,0,0,1)] hover:translate-y-[-4px]"
               >
                 Go to Comics
               </Link>
@@ -166,7 +166,7 @@ function ResetPasswordContent() {
               <div className="flex items-center justify-between">
                 <button
                   type="submit"
-                  className={`bg-black text-white px-6 py-3 rounded-md font-medium hover:bg-opacity-90 transition-colors w-full ${
+                  className={`w-full py-3 px-6 bg-[#FFDD33] text-black font-medium rounded-full text-center transition-all duration-200 border-2 border-black hover:shadow-[0_4px_0_0_rgba(0,0,0,1)] hover:translate-y-[-4px] ${
                     isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
                   }`}
                   disabled={isSubmitting}

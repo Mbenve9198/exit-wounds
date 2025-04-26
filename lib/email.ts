@@ -802,35 +802,134 @@ export async function sendResetPasswordEmail(email: string, nickname: string, to
       to: [email],
       subject: 'Password Reset - Exit Wounds',
       html: `
-        <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid #000; border-radius: 15px; box-shadow: 5px 5px 0px #000;">
-          <img src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/images/header_comics.png" alt="Exit Wounds" style="width: 200px; margin: 0 auto 20px; display: block;">
-          
-          <h1 style="font-size: 24px; margin-bottom: 20px; text-align: center;">Password Reset Request</h1>
-          
-          <p>Hey ${nickname},</p>
-          
-          <p>Seems like you've forgotten your password. Classic founder move - too busy thinking about world domination to remember basic credentials.</p>
-          
-          <p>Don't worry, we've all been there (except those annoying people with perfect memory). Click the link below to reset your password:</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" style="background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Reset Your Password</a>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset Request</title>
+          <style>
+            /* Stili globali */
+            body, html {
+              margin: 0;
+              padding: 0;
+              font-family: 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              background-color: #f9f9f9;
+            }
+            
+            /* Container principale */
+            .container {
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 30px 20px;
+              background-color: #ffffff;
+              border: 2px solid #000;
+              border-radius: 15px;
+              box-shadow: 5px 5px 0px #000;
+            }
+            
+            /* Header */
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            
+            .header img {
+              width: 200px;
+              height: auto;
+              margin: 0 auto 20px;
+              display: block;
+            }
+            
+            /* Titoli */
+            h1 {
+              color: #000;
+              font-size: 24px;
+              margin-bottom: 20px;
+              text-align: center;
+              font-weight: 800;
+            }
+            
+            /* Contenuto */
+            p {
+              margin-bottom: 15px;
+              font-size: 16px;
+            }
+            
+            /* Bottone - stile 3D */
+            .action-button {
+              display: block;
+              width: 70%;
+              margin: 30px auto;
+              padding: 15px 25px;
+              background-color: #FFDD33;
+              color: #000;
+              text-decoration: none;
+              text-align: center;
+              font-weight: bold;
+              font-size: 18px;
+              border: 2px solid #000;
+              border-radius: 50px;
+              box-shadow: 0 4px 0 #000;
+              position: relative;
+            }
+            
+            /* Firma */
+            .signature {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #eee;
+              text-align: center;
+              font-style: italic;
+            }
+            
+            /* Footer */
+            .footer {
+              margin-top: 20px;
+              font-size: 12px;
+              color: #777;
+              text-align: center;
+            }
+            
+            .footer a {
+              color: #555;
+              text-decoration: underline;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <img src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/images/header_comics.png" alt="Exit Wounds">
+              <h1>Password Reset Request</h1>
+            </div>
+            
+            <p>Hey ${nickname},</p>
+            
+            <p>Seems like you've forgotten your password. Classic founder move - too busy thinking about world domination to remember basic credentials.</p>
+            
+            <p>Don't worry, we've all been there (except those annoying people with perfect memory). Click the link below to reset your password:</p>
+            
+            <a href="${resetUrl}" class="action-button">Reset Your Password</a>
+            
+            <p>This link is valid for 1 hour. After that, it expires like those unrealistic founder promises to VCs.</p>
+            
+            <p>If you didn't request this, please ignore this email. Someone probably typed in the wrong address - like that time you pitched the wrong deck to investors.</p>
+            
+            <div class="signature">
+              <p>Still somewhat breathing,<br><br>
+              Marco<br>
+              Ex-founder, Eternal White Belt & Accidental AI Wrangler</p>
+            </div>
+            
+            <div class="footer">
+              <p>©2025 Exit Wounds | <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/unsubscribe?email=${encodeURIComponent(email)}">Unsubscribe</a></p>
+            </div>
           </div>
-          
-          <p>This link is valid for 1 hour. After that, it expires like those unrealistic founder promises to VCs.</p>
-          
-          <p>If you didn't request this, please ignore this email. Someone probably typed in the wrong address - like that time you pitched the wrong deck to investors.</p>
-          
-          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-style: italic;">
-            <p>Still somewhat breathing,<br><br>
-            Marco<br>
-            Ex-founder, Eternal White Belt & Accidental AI Wrangler</p>
-          </div>
-          
-          <div style="margin-top: 20px; font-size: 12px; color: #777; text-align: center;">
-            <p>©2025 Exit Wounds | <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/unsubscribe?email=${encodeURIComponent(email)}" style="color: #555; text-decoration: underline;">Unsubscribe</a></p>
-          </div>
-        </div>
+        </body>
+        </html>
       `
     });
     
