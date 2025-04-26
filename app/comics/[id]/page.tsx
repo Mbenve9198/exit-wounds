@@ -54,6 +54,7 @@ export default async function ComicReaderPage({ params }: { params: { id: string
                 imageUrl={image.url} 
                 censors={image.censors}
                 altText={`${comic.title} - Page ${index + 1}`}
+                comicTitle={comic.title}
               />
             ) : (
               <img 
