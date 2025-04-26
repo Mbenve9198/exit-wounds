@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Comic } from '@/lib/models/Comic';
@@ -26,10 +26,12 @@ async function getPublishedComics(): Promise<Comic[]> {
 
 // Componente principale con suspense
 function ComicsPageContent() {
+  const router = useRouter();
   const [comics, setComics] = useState<Comic[]>([]);
   const [loading, setLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loadingComic, setLoadingComic] = useState<string | null>(null);
   
   const searchParams = useSearchParams();
   
@@ -90,6 +92,11 @@ function ComicsPageContent() {
       console.error('Error logging out:', error);
     }
   };
+
+  const handleComicClick = (comicId: string) => {
+    setLoadingComic(comicId);
+    router.push(`/comics/${comicId}`);
+  };
   
   return (
     <div className="bg-white min-h-screen flex flex-col">
@@ -145,12 +152,19 @@ function ComicsPageContent() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {comics.map((comic) => (
-              <Link 
-                href={`/comics/${comic._id}`} 
+              <div 
                 key={comic._id?.toString()}
-                className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1"
+                className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+                onClick={() => handleComicClick(comic._id?.toString() || '')}
               >
                 <div className="aspect-w-3 aspect-h-4 relative">
+                  {loadingComic === comic._id?.toString() ? (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-10">
+                      <div className="w-16 h-16 border-t-4 border-[#FFDD33] border-solid rounded-full animate-spin"></div>
+                      <p className="text-white mt-4 font-medium">Loading...</p>
+                    </div>
+                  ) : null}
+                  
                   {comic.images && comic.images.length > 0 ? (
                     <img 
                       src={comic.images[0].url} 
@@ -174,7 +188,7 @@ function ComicsPageContent() {
                     <p className="text-sm opacity-90">{comic.images?.length || 0} pages</p>
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}
