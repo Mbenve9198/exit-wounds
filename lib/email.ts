@@ -504,6 +504,36 @@ export async function sendApprovalEmail(email: string, nickname: string) {
               border-radius: 15px;
             }
             
+            /* Bottone - stile 3D */
+            .action-button {
+              display: block;
+              width: 80%;
+              margin: 30px auto;
+              padding: 15px 25px;
+              background-color: #FFDD33;
+              color: #000;
+              text-decoration: none;
+              text-align: center;
+              font-weight: bold;
+              font-size: 18px;
+              border: 3px solid #000;
+              border-radius: 40px;
+              transition: all 0.2s ease;
+              box-shadow: 0 6px 0 #000;
+              position: relative;
+              top: 0;
+            }
+            
+            .action-button:hover {
+              top: -3px;
+              box-shadow: 0 9px 0 #000;
+            }
+            
+            .action-button:active {
+              top: 3px;
+              box-shadow: 0 2px 0 #000;
+            }
+            
             /* Footer */
             .footer {
               margin-top: 30px;
@@ -586,6 +616,15 @@ export async function sendApprovalEmail(email: string, nickname: string) {
               <p>Your first proper newsletter will be launched on Monday, April 28th.</p>
               
               <p>Remember the BJJ wisdom: Everyone taps eventually. The trick is getting back up.</p>
+            </div>
+            
+            <div class="section">
+              <div class="title-marker">CHECK OUT PUBLISHED COMICS NOW</div>
+              <p>While you wait for the next issue, you can already access all previously published comics on my website:</p>
+              <a href="https://exit-wounds.com/comics" class="action-button">
+                ACCESS COMICS ARCHIVE
+              </a>
+              <p>New comics will be delivered directly to your inbox, but you can always find the complete collection on the website.</p>
             </div>
             
             <div class="footer">
