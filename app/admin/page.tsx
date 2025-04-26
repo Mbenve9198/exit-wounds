@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, FormEvent, useRef, DragEvent } from 'react';
-import { Comic } from '@/lib/models/Comic';
+import { Comic, CensorInfo } from '@/lib/models/Comic';
 import { useRouter } from 'next/navigation';
+import ImageCensorEditor from './components/ImageCensorEditor';
 
 // Dimensione massima per immagine in MB
 const MAX_IMAGE_SIZE_MB = 2;
@@ -23,6 +24,8 @@ export default function AdminPage() {
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [imageCensors, setImageCensors] = useState<{[key: number]: CensorInfo[]}>({});
+  const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [formError, setFormError] = useState('');
   const [selectedComicId, setSelectedComicId] = useState<string | null>(null);
@@ -208,6 +211,16 @@ export default function AdminPage() {
       // Aggiorna lo stato con i file compressi
       setImages(prevImages => [...prevImages, ...compressedImages]);
       setPreviewUrls(prevUrls => [...prevUrls, ...newPreviewUrls]);
+      
+      // Inizializza le censure per le nuove immagini
+      const startIndex = images.length;
+      const newCensors = { ...imageCensors };
+      
+      compressedImages.forEach((_, index) => {
+        newCensors[startIndex + index] = [];
+      });
+      
+      setImageCensors(newCensors);
       setFormError('');
     } catch (error) {
       console.error('Errore durante la compressione delle immagini:', error);
@@ -304,6 +317,23 @@ export default function AdminPage() {
     const newPreviewUrls = [...previewUrls];
     newPreviewUrls.splice(index, 1);
     setPreviewUrls(newPreviewUrls);
+    
+    // Aggiorna le censure
+    const newCensors = { ...imageCensors };
+    delete newCensors[index];
+    
+    // Aggiorna gli indici delle censure per le immagini successive
+    for (let i = index + 1; i < images.length; i++) {
+      newCensors[i - 1] = newCensors[i];
+      delete newCensors[i];
+    }
+    
+    setImageCensors(newCensors);
+    
+    // Se stavi modificando l'immagine rimossa, chiudi l'editor
+    if (editingImageIndex === index) {
+      setEditingImageIndex(null);
+    }
   };
 
   const moveImage = (fromIndex: number, toIndex: number) => {
@@ -318,37 +348,77 @@ export default function AdminPage() {
     const [movedPreview] = newPreviewUrls.splice(fromIndex, 1);
     newPreviewUrls.splice(toIndex, 0, movedPreview);
     setPreviewUrls(newPreviewUrls);
+    
+    // Aggiorna le censure
+    const newCensors = { ...imageCensors };
+    const movedCensors = newCensors[fromIndex] || [];
+    
+    // Riorganizza le censure in base al nuovo ordine
+    if (fromIndex < toIndex) {
+      // Spostamento verso il basso
+      for (let i = fromIndex; i < toIndex; i++) {
+        newCensors[i] = newCensors[i + 1] || [];
+      }
+    } else {
+      // Spostamento verso l'alto
+      for (let i = fromIndex; i > toIndex; i--) {
+        newCensors[i] = newCensors[i - 1] || [];
+      }
+    }
+    
+    newCensors[toIndex] = movedCensors;
+    setImageCensors(newCensors);
+    
+    // Aggiorna l'indice dell'immagine in modifica se necessario
+    if (editingImageIndex === fromIndex) {
+      setEditingImageIndex(toIndex);
+    } else if (editingImageIndex !== null) {
+      if (fromIndex < toIndex) {
+        if (editingImageIndex > fromIndex && editingImageIndex <= toIndex) {
+          setEditingImageIndex(editingImageIndex - 1);
+        }
+      } else {
+        if (editingImageIndex >= toIndex && editingImageIndex < fromIndex) {
+          setEditingImageIndex(editingImageIndex + 1);
+        }
+      }
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
-    // Reset messages
-    setSuccessMessage('');
-    setFormError('');
+    if (isEditing) {
+      saveEditedComic();
+      return;
+    }
     
-    // Validate form
-    if (!title.trim() || images.length === 0) {
-      setFormError('Titolo e almeno un\'immagine sono obbligatori');
+    // Validazione
+    if (!title.trim()) {
+      setFormError('Il titolo è richiesto.');
+      return;
+    }
+    
+    if (images.length === 0) {
+      setFormError('Almeno un\'immagine è richiesta.');
       return;
     }
     
     try {
       setUploading(true);
+      setFormError('');
       setUploadProgress(0);
-      setFormError(`Preparazione immagini... Attendere prego`);
       
-      // Array per memorizzare le informazioni delle immagini caricate
-      const uploadedImages: { url: string; cloudinaryId: string; order: number }[] = [];
+      // Array per memorizzare le immagini caricate su Cloudinary
+      const uploadedImages: any[] = [];
       
-      // Carica ogni immagine separatamente
+      // Carica ogni immagine
       for (let i = 0; i < images.length; i++) {
         const image = images[i];
-        setFormError(`Caricamento immagine ${i + 1} di ${images.length}...`);
         
-        // Calcola la percentuale di avanzamento
-        const progressPerImage = 100 / images.length;
-        setUploadProgress((i * progressPerImage));
+        // Aggiorna l'avanzamento
+        setUploadProgress(Math.round((i / images.length) * 80));
+        setFormError(`Caricamento immagine ${i + 1}/${images.length}...`);
         
         try {
           // Prepara i dati per il caricamento
@@ -375,11 +445,12 @@ export default function AdminPage() {
             throw new Error(result.error || 'Errore nel caricamento dell\'immagine');
           }
           
-          // Aggiungi l'immagine all'array di immagini caricate
+          // Aggiungi l'immagine all'array di immagini caricate, incluse le censure
           uploadedImages.push({
             url: result.url,
             cloudinaryId: result.publicId,
-            order: i
+            order: i,
+            censors: imageCensors[i] || []
           });
         } catch (error) {
           console.error(`Errore nel caricamento dell'immagine ${i + 1}:`, error);
@@ -421,6 +492,8 @@ export default function AdminPage() {
       setDescription('');
       setImages([]);
       setPreviewUrls([]);
+      setImageCensors({});
+      setEditingImageIndex(null);
       setFormError('');
       
       // Rilascia gli URL di anteprima per evitare memory leak
@@ -605,6 +678,61 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Nuova funzione per gestire l'editing delle censure
+  const handleEditCensors = (index: number) => {
+    setEditingImageIndex(index);
+  };
+
+  // Nuova funzione per aggiornare le censure di un'immagine
+  const handleCensorUpdate = (index: number, censors: CensorInfo[]) => {
+    setImageCensors({
+      ...imageCensors,
+      [index]: censors
+    });
+  };
+
+  // Componenti per l'Editor delle immagini
+  const renderImageEditor = () => {
+    if (editingImageIndex === null || !previewUrls[editingImageIndex]) {
+      return null;
+    }
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-screen overflow-y-auto">
+          <div className="p-4 border-b flex justify-between items-center">
+            <h3 className="text-lg font-medium">
+              Modifica Censura - Immagine {editingImageIndex + 1}
+            </h3>
+            <button 
+              type="button"
+              className="text-gray-500 hover:text-gray-700"
+              onClick={() => setEditingImageIndex(null)}
+            >
+              ✕
+            </button>
+          </div>
+          <div className="p-4">
+            <ImageCensorEditor 
+              imageUrl={previewUrls[editingImageIndex]}
+              censors={imageCensors[editingImageIndex] || []}
+              onChange={(censors) => handleCensorUpdate(editingImageIndex, censors)}
+            />
+          </div>
+          <div className="p-4 border-t">
+            <button
+              type="button"
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              onClick={() => setEditingImageIndex(null)}
+            >
+              Fatto
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading && !isAuthenticated) {
@@ -792,9 +920,22 @@ export default function AdminPage() {
                               {file.name}
                               <div className="text-xs text-gray-500">
                                 {(file.size / 1024).toFixed(0)} KB
+                                {imageCensors[index]?.length > 0 && (
+                                  <span className="ml-2 text-blue-500">
+                                    {imageCensors[index].length} censure
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <div className="flex-shrink-0 space-x-2">
+                              <button
+                                type="button"
+                                className="text-blue-500 hover:text-blue-700"
+                                onClick={() => handleEditCensors(index)}
+                                title="Modifica censure"
+                              >
+                                ✎
+                              </button>
                               {index > 0 && (
                                 <button
                                   type="button"

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import './reader.css';
 import { ClientNavigationBanner } from './client-components';
+import { CensoredImage } from './components/CensoredImage';
 
 // Imposta la revalidazione a zero per evitare la cache
 export const revalidate = 0;
@@ -47,12 +48,21 @@ export default async function ComicReaderPage({ params }: { params: { id: string
             key={index}
             className="comic-page"
           >
-            <img 
-              src={image.url} 
-              alt={`${comic.title} - Page ${index + 1}`}
-              className="fullscreen-image"
-              loading="lazy"
-            />
+            {/* Verifica se ci sono censure per questa immagine e usa il componente CensoredImage */}
+            {image.censors && image.censors.length > 0 ? (
+              <CensoredImage 
+                imageUrl={image.url} 
+                censors={image.censors}
+                altText={`${comic.title} - Page ${index + 1}`}
+              />
+            ) : (
+              <img 
+                src={image.url} 
+                alt={`${comic.title} - Page ${index + 1}`}
+                className="fullscreen-image"
+                loading="lazy"
+              />
+            )}
           </div>
         ))}
       </div>

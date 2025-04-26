@@ -53,11 +53,36 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Elaborazione delle censure
+    const processedImages = images.map(img => {
+      // Assicuriamo che le censure siano valide
+      let validCensors = [];
+      
+      if (img.censors && Array.isArray(img.censors)) {
+        validCensors = img.censors.filter((censor: any) => 
+          censor.id && 
+          censor.type === 'emoji' && 
+          censor.emoji && 
+          typeof censor.x === 'number' && 
+          typeof censor.y === 'number' && 
+          typeof censor.width === 'number' && 
+          typeof censor.height === 'number'
+        );
+      }
+      
+      return {
+        url: img.url,
+        cloudinaryId: img.cloudinaryId,
+        order: img.order,
+        censors: validCensors
+      };
+    });
+
     // Creiamo l'oggetto fumetto
     const comic: Omit<Comic, '_id'> = {
       title,
       description: description || '',
-      images: images as ImageInfo[],
+      images: processedImages as ImageInfo[],
       createdAt: new Date(),
       updatedAt: new Date(),
       published: false,

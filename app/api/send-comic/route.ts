@@ -38,11 +38,68 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
   // Generiamo l'HTML per tutte le immagini in ordine
   const imagesHTML = comic.images
     .sort((a, b) => a.order - b.order) // Ordiniamo per il campo order
-    .map(image => `
-      <div class="comic-image">
-        <img src="${image.url}" alt="Immagine di ${comic.title}" style="max-width: 100%; width: 100%; height: auto; display: block; margin: 0; padding: 0; border: none;">
-      </div>
-    `).join('');
+    .map(image => {
+      // Verifica se l'immagine ha censure
+      const hasCensors = image.censors && image.censors.length > 0;
+      
+      // Se non ci sono censure, mostra l'immagine normalmente
+      if (!hasCensors) {
+        return `
+          <div class="comic-image">
+            <img src="${image.url}" alt="Immagine di ${comic.title}" style="max-width: 100%; width: 100%; height: auto; display: block; margin: 0; padding: 0; border: none;">
+          </div>
+        `;
+      }
+      
+      // Se ci sono censure, creiamo un link per visualizzare l'immagine sul sito
+      // Ottieni un ID univoco per l'immagine
+      const imageId = image.cloudinaryId.split('/').pop() || 'image';
+      
+      return `
+        <div class="comic-image">
+          <div style="position: relative; width: 100%;">
+            <img src="${image.url}" alt="Immagine di ${comic.title}" style="max-width: 100%; width: 100%; height: auto; display: block; margin: 0; padding: 0; border: none;">
+            
+            <!-- Layer di censura -->
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+              ${image.censors?.map(censor => `
+                <div style="
+                  position: absolute;
+                  left: ${censor.x}%;
+                  top: ${censor.y}%;
+                  width: ${censor.width}%;
+                  height: ${censor.height}%;
+                  font-size: ${Math.min(censor.width, censor.height) * 0.8}vw;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  text-align: center;
+                ">
+                  ${censor.emoji}
+                </div>
+              `).join('')}
+            </div>
+            
+            <!-- Nota per lo sblocco -->
+            <div style="
+              position: absolute;
+              bottom: 10px;
+              right: 10px;
+              background-color: rgba(0, 0, 0, 0.7);
+              color: white;
+              padding: 5px 10px;
+              border-radius: 5px;
+              font-size: 12px;
+              text-align: center;
+            ">
+              <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://exit-wounds.com'}/comics/${comic._id?.toString()}" style="color: white; text-decoration: underline;">
+                Sblocca censura
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
 
   // Stile CSS per le immagini del fumetto
   const comicStyles = `
