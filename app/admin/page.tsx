@@ -781,7 +781,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">Exit Wounds Admin</h1>
@@ -1165,6 +1165,9 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+      
+      {/* Editor di censura modale */}
+      {renderImageEditor()}
     </div>
   );
 } 
