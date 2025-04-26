@@ -613,8 +613,6 @@ export async function sendApprovalEmail(email: string, nickname: string) {
             </div>
             
             <div style="text-align: center; margin: 25px 0;">
-              <p>Your first proper newsletter will be launched on Monday, April 28th.</p>
-              
               <p>Remember the BJJ wisdom: Everyone taps eventually. The trick is getting back up.</p>
             </div>
             
