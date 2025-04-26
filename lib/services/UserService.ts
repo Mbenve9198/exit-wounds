@@ -111,44 +111,58 @@ export class UserService {
     return result;
   }
 
-  static async setResetPasswordToken(email: string, token: string, expires: Date): Promise<User | null> {
-    const collection = await this.getCollection();
-    const result = await collection.findOneAndUpdate(
-      { email },
-      { 
-        $set: { 
-          resetPasswordToken: token,
-          resetPasswordExpires: expires,
-          updatedAt: new Date()
-        } 
-      },
-      { returnDocument: 'after' }
-    );
-
-    return result;
+  static async setResetPasswordToken(email: string, token: string, expires: Date): Promise<boolean> {
+    try {
+      const collection = await this.getCollection();
+      const result = await collection.updateOne(
+        { email },
+        { 
+          $set: { 
+            resetPasswordToken: token,
+            resetPasswordExpires: expires
+          } 
+        }
+      );
+      
+      return result.modifiedCount > 0;
+    } catch (error) {
+      console.error('Error setting reset password token:', error);
+      throw error;
+    }
   }
 
   static async resetPassword(token: string, newPassword: string): Promise<User | null> {
-    const collection = await this.getCollection();
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    
-    const result = await collection.findOneAndUpdate(
-      { 
+    try {
+      const collection = await this.getCollection();
+      
+      // Trova l'utente con il token valido e non scaduto
+      const user = await collection.findOne({
         resetPasswordToken: token,
         resetPasswordExpires: { $gt: new Date() }
-      },
-      { 
-        $set: { 
-          password: hashedPassword,
-          resetPasswordToken: null,
-          resetPasswordExpires: null,
-          updatedAt: new Date()
-        } 
-      },
-      { returnDocument: 'after' }
-    );
-
-    return result;
+      });
+      
+      if (!user) {
+        return null;
+      }
+      
+      // Hash della nuova password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+      
+      // Aggiorna la password e rimuovi i token di reset
+      const result = await collection.updateOne(
+        { _id: user._id },
+        {
+          $set: { password: hashedPassword },
+          $unset: { resetPasswordToken: "", resetPasswordExpires: "" }
+        }
+      );
+      
+      return result.modifiedCount > 0 ? user : null;
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      throw error;
+    }
   }
 
   // Genera un token casuale per unsubscribe

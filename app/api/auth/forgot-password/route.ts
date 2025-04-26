@@ -14,27 +14,53 @@ export async function POST(request: Request) {
       );
     }
     
+    console.log('Processing forgot password request for email:', email);
+    
     // Find user by email
     const user = await UserService.findUserByEmail(email);
     
     // If user not found, still return success to prevent email enumeration
     if (!user) {
+      console.log('User not found with email:', email);
       return NextResponse.json({
         success: true,
         message: "If that email exists in our system, we've sent password reset instructions."
       });
     }
     
+    console.log('User found:', user._id?.toString());
+    
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetExpires = new Date();
     resetExpires.setHours(resetExpires.getHours() + 1); // 1 hour expiration
     
+    console.log('Generated reset token:', resetToken, 'expires:', resetExpires);
+    
     // Save reset token to user
-    await UserService.setResetPasswordToken(email, resetToken, resetExpires);
+    const tokenSaved = await UserService.setResetPasswordToken(email, resetToken, resetExpires);
+    
+    if (!tokenSaved) {
+      console.error('Failed to save reset token for user:', email);
+      return NextResponse.json(
+        { error: 'Something went wrong saving your reset token' },
+        { status: 500 }
+      );
+    }
+    
+    console.log('Reset token saved successfully for user:', email);
     
     // Send reset email
-    await sendResetPasswordEmail(email, user.nickname, resetToken);
+    try {
+      await sendResetPasswordEmail(email, user.nickname || 'User', resetToken);
+      console.log('Reset email sent successfully to:', email);
+    } catch (emailError) {
+      console.error('Error sending reset email:', emailError);
+      return NextResponse.json(
+        { error: 'Failed to send reset email. Please try again later.' },
+        { status: 500 }
+      );
+    }
     
     return NextResponse.json({
       success: true,

@@ -794,52 +794,47 @@ export async function sendResetPasswordEmail(email: string, nickname: string, to
   const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
   
   try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
-      },
-      body: JSON.stringify({
-        from: 'Exit Wounds <hello@exit-wounds.com>',
-        to: [email],
-        subject: 'Password Reset - Exit Wounds',
-        html: `
-          <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid #000; border-radius: 15px; box-shadow: 5px 5px 0px #000;">
-            <img src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/images/header_comics.png" alt="Exit Wounds" style="width: 200px; margin: 0 auto 20px; display: block;">
-            
-            <h1 style="font-size: 24px; margin-bottom: 20px; text-align: center;">Password Reset Request</h1>
-            
-            <p>Hey ${nickname},</p>
-            
-            <p>Seems like you've forgotten your password. Classic founder move - too busy thinking about world domination to remember basic credentials.</p>
-            
-            <p>Don't worry, we've all been there (except those annoying people with perfect memory). Click the link below to reset your password:</p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" style="background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Reset Your Password</a>
-            </div>
-            
-            <p>This link is valid for 1 hour. After that, it expires like those unrealistic founder promises to VCs.</p>
-            
-            <p>If you didn't request this, please ignore this email. Someone probably typed in the wrong address - like that time you pitched the wrong deck to investors.</p>
-            
-            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-style: italic;">
-              <p>Still somewhat breathing,<br><br>
-              Marco<br>
-              Ex-founder, Eternal White Belt & Accidental AI Wrangler</p>
-            </div>
-            
-            <div style="margin-top: 20px; font-size: 12px; color: #777; text-align: center;">
-              <p>©2025 Exit Wounds | <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/unsubscribe?email=${encodeURIComponent(email)}" style="color: #555; text-decoration: underline;">Unsubscribe</a></p>
-            </div>
+    console.log('Sending reset password email to:', email, 'with token:', token);
+    
+    // Utilizziamo l'istanza resend invece di fetch manuale
+    const data = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'Exit Wounds <hello@exit-wounds.com>',
+      to: [email],
+      subject: 'Password Reset - Exit Wounds',
+      html: `
+        <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid #000; border-radius: 15px; box-shadow: 5px 5px 0px #000;">
+          <img src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/images/header_comics.png" alt="Exit Wounds" style="width: 200px; margin: 0 auto 20px; display: block;">
+          
+          <h1 style="font-size: 24px; margin-bottom: 20px; text-align: center;">Password Reset Request</h1>
+          
+          <p>Hey ${nickname},</p>
+          
+          <p>Seems like you've forgotten your password. Classic founder move - too busy thinking about world domination to remember basic credentials.</p>
+          
+          <p>Don't worry, we've all been there (except those annoying people with perfect memory). Click the link below to reset your password:</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Reset Your Password</a>
           </div>
-        `
-      })
+          
+          <p>This link is valid for 1 hour. After that, it expires like those unrealistic founder promises to VCs.</p>
+          
+          <p>If you didn't request this, please ignore this email. Someone probably typed in the wrong address - like that time you pitched the wrong deck to investors.</p>
+          
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-style: italic;">
+            <p>Still somewhat breathing,<br><br>
+            Marco<br>
+            Ex-founder, Eternal White Belt & Accidental AI Wrangler</p>
+          </div>
+          
+          <div style="margin-top: 20px; font-size: 12px; color: #777; text-align: center;">
+            <p>©2025 Exit Wounds | <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/unsubscribe?email=${encodeURIComponent(email)}" style="color: #555; text-decoration: underline;">Unsubscribe</a></p>
+          </div>
+        </div>
+      `
     });
     
-    const data = await response.json();
-    console.log('Password reset email sent:', data);
+    console.log('Password reset email sent successfully:', data);
     return data;
   } catch (error) {
     console.error('Error sending password reset email:', error);
