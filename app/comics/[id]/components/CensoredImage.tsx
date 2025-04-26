@@ -1,7 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CensorInfo } from '@/lib/models/Comic';
+
+// Definisci l'interfaccia CensorInfo all'interno del file poiché non è esportata da Comic
+interface CensorInfo {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  emoji: string;
+}
 
 interface CensoredImageProps {
   imageUrl: string;
@@ -32,11 +41,15 @@ export function CensoredImage({ imageUrl, censors, altText, comicTitle }: Censor
         setUnlockedCensors(JSON.parse(savedUnlocks));
       }
       
-      // Carica stato di visita
+      // Forziamo la visualizzazione dell'avviso se ci sono censure attive
+      const hasCensors = censors && censors.length > 0;
+      if (hasCensors) {
+        setShowInitialWarning(true);
+      }
+      
+      // Lo stato di visita viene ora utilizzato solo per il logging
       const visited = localStorage.getItem(visitedKey);
       if (!visited) {
-        // Se è la prima visita, mostra l'avviso
-        setShowInitialWarning(true);
         // Imposta questa pagina come visitata
         localStorage.setItem(visitedKey, 'true');
       }
@@ -45,7 +58,7 @@ export function CensoredImage({ imageUrl, censors, altText, comicTitle }: Censor
     } catch (error) {
       console.error('Error retrieving saved state:', error);
     }
-  }, [storageKey, visitedKey]);
+  }, [storageKey, visitedKey, censors]);
   
   // Salva lo stato di sblocco nel localStorage quando cambia
   useEffect(() => {
