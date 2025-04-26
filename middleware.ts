@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verify } from 'jsonwebtoken';
+import * as jose from 'jose';
 
 // JWT secret key
 const JWT_SECRET = process.env.JWT_SECRET || 'exit-wounds-secret-key';
 
-// Funzione per verificare il token JWT
-function verifyToken(token: string) {
+// Funzione per verificare il token JWT utilizzando jose
+async function verifyToken(token: string) {
   try {
-    return verify(token, JWT_SECRET);
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const { payload } = await jose.jwtVerify(token, secret);
+    return payload;
   } catch (error) {
+    console.error('Token verification error:', error);
     return null;
   }
 }
@@ -53,7 +56,7 @@ export async function middleware(request: NextRequest) {
   }
   
   // Verifica validità del token
-  const decodedToken = verifyToken(token);
+  const decodedToken = await verifyToken(token);
   if (!decodedToken) {
     // Token non valido, reindirizza con flag per login
     const url = new URL('/comics', request.url);

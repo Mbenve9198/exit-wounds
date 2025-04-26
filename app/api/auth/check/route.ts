@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verify } from 'jsonwebtoken';
+import * as jose from 'jose';
 import { UserService } from '@/lib/services/UserService';
 
 // JWT secret key
@@ -19,10 +19,12 @@ export async function GET(request: NextRequest) {
     
     // Verify token
     try {
-      const decoded = verify(token, JWT_SECRET) as { id: string; email: string };
+      const secret = new TextEncoder().encode(JWT_SECRET);
+      const { payload } = await jose.jwtVerify(token, secret);
+      const userId = payload.id as string;
       
       // Check if user exists
-      const user = await UserService.findUserById(decoded.id);
+      const user = await UserService.findUserById(userId);
       if (!user) {
         return NextResponse.json(
           { authenticated: false },

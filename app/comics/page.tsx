@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -24,7 +24,8 @@ async function getPublishedComics(): Promise<Comic[]> {
   }
 }
 
-export default function ComicsPage() {
+// Componente principale con suspense
+function ComicsPageContent() {
   const [comics, setComics] = useState<Comic[]>([]);
   const [loading, setLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -196,5 +197,18 @@ export default function ComicsPage() {
         onSuccess={handleLoginSuccess}
       />
     </div>
+  );
+}
+
+// Componente principale con Suspense
+export default function ComicsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    }>
+      <ComicsPageContent />
+    </Suspense>
   );
 } 
