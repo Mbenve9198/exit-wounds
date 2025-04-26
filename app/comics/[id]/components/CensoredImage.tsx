@@ -169,7 +169,7 @@ export function CensoredImage({ imageUrl, censors, altText, comicTitle }: Censor
       {/* Pulsante per sbloccare tutte le censure (visibile solo se ci sono censure attive) */}
       {hasActiveCensors && !showInitialWarning && (
         <button
-          className="absolute top-4 right-4 bg-[#FFDD33] text-black font-medium text-sm rounded-full text-center transition-all duration-200 border-2 border-black hover:shadow-[0_4px_0_0_rgba(0,0,0,1)] hover:translate-y-[-4px] px-3 py-1"
+          className="absolute bottom-4 right-4 bg-[#FFDD33] bg-opacity-80 text-black font-medium text-sm rounded-full text-center transition-all duration-200 border-2 border-black hover:shadow-[0_4px_0_0_rgba(0,0,0,1)] hover:translate-y-[-4px] px-3 py-1 backdrop-blur-sm"
           onClick={unlockAllCensors}
         >
           Unlock all censored content
