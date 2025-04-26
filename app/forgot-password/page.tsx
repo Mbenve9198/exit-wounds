@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function ForgotPasswordPage() {
+// Componente principale
+function ForgotPasswordContent() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -154,5 +155,18 @@ export default function ForgotPasswordPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Componente wrapper con Suspense
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    }>
+      <ForgotPasswordContent />
+    </Suspense>
   );
 } 

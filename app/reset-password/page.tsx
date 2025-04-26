@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function ResetPasswordPage() {
+// Componente principale con Suspense
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -188,5 +189,18 @@ export default function ResetPasswordPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Componente wrapper con Suspense
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   );
 } 
