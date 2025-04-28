@@ -1,16 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-// Definisci l'interfaccia CensorInfo all'interno del file poiché non è esportata da Comic
-interface CensorInfo {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  emoji: string;
-}
+import { CensorInfo } from '@/lib/models/Comic';
 
 interface CensoredImageProps {
   imageUrl: string;
@@ -131,7 +122,14 @@ export function CensoredImage({ imageUrl, censors, altText, comicTitle }: Censor
               }}
               onClick={() => unlockCensor(censor.id)}
             >
-              <span>{censor.emoji}</span>
+              <span style={{
+                position: 'absolute',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                height: '100%'
+              }}>{censor.emoji}</span>
             </div>
           );
         })}

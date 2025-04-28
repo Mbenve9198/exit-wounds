@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
-import { Comic } from '@/lib/models/Comic';
+import { Comic, ImageInfo, CensorInfo } from '@/lib/models/Comic';
 import { Resend } from 'resend';
 
 if (!process.env.RESEND_API_KEY) {
@@ -74,8 +74,9 @@ function generateComicEmail(comic: Comic, user: any, textBefore?: string, textAf
                   align-items: center;
                   justify-content: center;
                   text-align: center;
+                  pointer-events: none;
                 ">
-                  ${censor.emoji}
+                  <span style="position: absolute; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">${censor.emoji}</span>
                 </div>
               `).join('')}
             </div>
